@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Coffee Shop">
+<meta name="apple-mobile-web-app-title" content="Sweetheart Cafe">
 <meta name="theme-color" content="#1a1a1a">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>Coffee Shop</title>
+<title>Sweetheart Cafe</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1a1a1a;max-width:430px;margin:0 auto;min-height:100vh;}
@@ -191,7 +191,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="s-login" class="scr on">
   <div class="login-wrap">
     <div class="login-logo">☕</div>
-    <div class="login-title">Coffee Shop</div>
+    <div class="login-title">Sweetheart Cafe</div>
     <div class="login-sub">Daily Operations</div>
     <div id="sync-status" class="sync-status loading"><div class="dot loading" id="sync-dot"></div><span id="sync-msg">Connecting to Google Sheets...</span></div>
     <div id="usr-list" style="margin-top:16px;"></div>
@@ -222,7 +222,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div id="s-main" class="scr">
   <div class="pg-hdr">
-    <div><div class="pg-title">Coffee Shop</div><div class="pg-sub">Daily Operations</div></div>
+    <div><div class="pg-title">Sweetheart Cafe</div><div class="pg-sub">Daily Operations</div></div>
     <div class="hdr-right"><div class="logout-btn" onclick="logout()">Logout</div><div id="main-sync-dot" class="sync-dot"></div></div>
   </div>
   <div class="stat-row">
@@ -435,15 +435,48 @@ async function api(action,data={}){
 async function syncStaff(){
   setSyncStatus('loading','Connecting to Google Sheets...');
   try{
-    const r=await api('getStaff');
-    if(r.error)throw new Error(r.error);
-    if(r.staff&&r.staff.length>0){D.users=r.staff;saveLocal();setSyncStatus('ok','Connected — data syncs to Google Sheets');}
-    else throw new Error('No staff in sheet');
+    // Load staff and lists in parallel
+    const [staffRes, listsRes] = await Promise.all([
+      api('getStaff'),
+      api('getLists')
+    ]);
+    if(staffRes.error) throw new Error(staffRes.error);
+    if(staffRes.staff&&staffRes.staff.length>0){
+      D.users=staffRes.staff;
+      saveLocal();
+    } else throw new Error('No staff in sheet');
+    // Merge sheet lists into app lists
+    if(listsRes.lists&&!listsRes.error){
+      mergeSheetLists(listsRes.lists);
+      saveLocal();
+    }
+    setSyncStatus('ok','Connected — data syncs to Google Sheets');
   }catch(e){
-    if(D.users.length>0)setSyncStatus('err','Offline — using cached staff');
+    if(D.users.length>0)setSyncStatus('err','Offline — using cached data');
     else setSyncStatus('err','Cannot connect — check internet');
   }
   renderLogin();
+}
+
+function mergeSheetLists(sheetLists){
+  // Map PickList sheet column headers to app list keys
+  // Adjust these mappings to match your actual PickList column headers
+  const MAP = {
+    'Suppliers':      'suppliers',
+    'Category':       'categories',
+    'Currency':       'currency',
+    'Staff':          'staffNames',
+    'Payed In':       'paidIn',
+    'Payment Method': 'paymentMethod',
+    'Credit':         'credit',
+    'Payed By':       'paidBy',
+    'Legality':       'legality',
+  };
+  Object.entries(MAP).forEach(([sheetKey, appKey])=>{
+    if(sheetLists[sheetKey]&&sheetLists[sheetKey].length){
+      D.lists[appKey]=sheetLists[sheetKey];
+    }
+  });
 }
 
 function setSyncStatus(type,msg){
