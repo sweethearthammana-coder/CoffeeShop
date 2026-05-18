@@ -442,35 +442,39 @@ async function api(action,data={}){
 // ── SYNC STAFF ────────────────────────────────────────────────────────────────
 async function syncStaff(){
   setSyncStatus('loading','Connecting to Google Sheets...');
+
+  // ── Step 1: Load staff ───────────────────────────────────────────────────
   try{
-    // Load staff and lists in parallel
-    const [staffRes, listsRes] = await Promise.all([
-      api('getStaff'),
-      api('getLists')
-    ]);
+    const staffRes = await api('getStaff');
     if(staffRes.error) throw new Error(staffRes.error);
     if(staffRes.staff&&staffRes.staff.length>0){
       D.users=staffRes.staff;
       saveLocal();
     } else throw new Error('No staff in sheet');
-    // Merge sheet lists into app lists
-    if(listsRes&&listsRes.lists&&!listsRes.error){
+  }catch(e){
+    if(D.users.length>0) setSyncStatus('err','Offline — using cached staff');
+    else setSyncStatus('err','Cannot connect — check internet');
+    renderLogin();
+    return;
+  }
+
+  // ── Step 2: Load lists ───────────────────────────────────────────────────
+  try{
+    const listsRes = await api('getLists');
+    if(listsRes&&listsRes.lists){
       mergeSheetLists(listsRes.lists);
       saveLocal();
-      saveSheetLists(); // save separately so it survives page reloads
-      populateDDs();    // refresh all dropdowns immediately
-      renderChips();    // refresh staff chips immediately
+      saveSheetLists();
       const count=Object.keys(listsRes.lists).length;
       setSyncStatus('ok','Connected — '+count+' lists loaded from sheet');
     } else {
-      const errMsg=listsRes?.error||'unknown';
-      console.warn('getLists error:',errMsg);
       setSyncStatus('ok','Connected — data syncs to Google Sheets');
     }
   }catch(e){
-    if(D.users.length>0)setSyncStatus('err','Offline — using cached data');
-    else setSyncStatus('err','Cannot connect — check internet');
+    setSyncStatus('ok','Connected — data syncs to Google Sheets');
   }
+
+  // ── Always refresh UI with whatever lists we have ────────────────────────
   populateDDs();
   renderChips();
   renderLogin();
