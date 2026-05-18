@@ -423,8 +423,16 @@ let currentPhotoTarget = null;
 let isSaving = false; // prevents double-save
 
 function sl(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
-function loadLocal(){const u=sl('cs8_usr');if(u)D.users=u;const r=sl('cs8_rec');if(r)D.records=r;const l=sl('cs8_lists');if(l)D.lists=l;}
+function loadLocal(){
+  const u=sl('cs8_usr');if(u)D.users=u;
+  const r=sl('cs8_rec');if(r)D.records=r;
+  // Prefer sheet-synced lists over default lists
+  const ls=sl('cs8_lists_sheet');
+  if(ls){D.lists={...D.lists,...ls};}
+  else{const l=sl('cs8_lists');if(l)D.lists=l;}
+}
 function saveLocal(){sl('cs8_usr',D.users);sl('cs8_rec',D.records);sl('cs8_lists',D.lists);}
+function saveSheetLists(){sl('cs8_lists_sheet',D.lists);}
 
 async function api(action,data={}){
   const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action,key:APP_KEY,...data})});
@@ -446,15 +454,25 @@ async function syncStaff(){
       saveLocal();
     } else throw new Error('No staff in sheet');
     // Merge sheet lists into app lists
-    if(listsRes.lists&&!listsRes.error){
+    if(listsRes&&listsRes.lists&&!listsRes.error){
       mergeSheetLists(listsRes.lists);
       saveLocal();
+      saveSheetLists(); // save separately so it survives page reloads
+      populateDDs();    // refresh all dropdowns immediately
+      renderChips();    // refresh staff chips immediately
+      const count=Object.keys(listsRes.lists).length;
+      setSyncStatus('ok','Connected — '+count+' lists loaded from sheet');
+    } else {
+      const errMsg=listsRes?.error||'unknown';
+      console.warn('getLists error:',errMsg);
+      setSyncStatus('ok','Connected — data syncs to Google Sheets');
     }
-    setSyncStatus('ok','Connected — data syncs to Google Sheets');
   }catch(e){
     if(D.users.length>0)setSyncStatus('err','Offline — using cached data');
     else setSyncStatus('err','Cannot connect — check internet');
   }
+  populateDDs();
+  renderChips();
   renderLogin();
 }
 
