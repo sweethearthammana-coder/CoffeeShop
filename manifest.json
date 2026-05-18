@@ -1,6 +1,6 @@
 {
-  "name": "Coffee Shop Daily Ops",
-  "short_name": "Coffee Shop",
+  "name": "Sweetheart Cafe",
+  "short_name": "Sweetheart Cafe",
   "description": "Daily income and expense tracker synced to Google Sheets",
   "start_url": "/",
   "display": "standalone",
