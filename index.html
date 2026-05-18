@@ -162,6 +162,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .install-banner.show{display:block;}
 .ib-title{font-size:15px;font-weight:700;color:#27500a;margin-bottom:6px;}
 .ib-steps{font-size:13px;color:#3b6d11;line-height:1.8;}
+/* payment breakdown */
+.pay-cash-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;margin-bottom:8px;}
+.pay-label{font-size:15px;font-weight:600;color:#1a1a1a;min-width:50px;}
+.pay-calc{font-size:15px;font-weight:600;color:#27500a;}
+.pay-sub{font-size:12px;color:#999;}
+.pay-extra-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:10px;}
+.pay-extra-wrap{padding:8px 0;}
 /* multi-debit rows */
 .debit-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:12px;}
 .debit-row .fi{flex:1;}
@@ -246,9 +253,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button type="button" class="add-debit-btn" onclick="addDebitRow()">+ Add debit</button>
         <div class="debit-total" id="debit-total"></div>
       </div>
-      <div class="f2">
-        <div class="field"><label class="flbl">Payment method</label><div class="sw"><select class="fsel" id="i-method"><option>Cash</option><option>Card</option></select></div></div>
-        <div class="field"><label class="flbl">Remark</label><input class="fi" id="i-rem" placeholder="Optional note"></div>
+      <div class="field"><label class="flbl">Remark</label><input class="fi" id="i-rem" placeholder="Optional note"></div>
+      <div class="field">
+        <label class="flbl">Payment breakdown</label>
+        <div class="pay-cash-row">
+          <span class="pay-label">Cash</span>
+          <span class="pay-calc" id="i-cash-display">—</span>
+          <span class="pay-sub">auto calculated</span>
+        </div>
+        <div class="pay-extra-wrap" id="pay-extra-wrap" style="display:none;">
+          <div class="pay-extra-row">
+            <div class="sw" style="flex:1;"><select class="fsel" id="i-pay-method" onchange="calc()"></select></div>
+            <div class="debit-amt-wrap" style="width:110px;">
+              <input class="fi" id="i-pay-amount" placeholder="0" inputmode="decimal" oninput="fmt(this);calc()">
+              <span class="usd-label" id="i-pay-cur-label">USD</span>
+            </div>
+            <div class="sw" style="width:70px;"><select class="fsel" id="i-pay-cur" style="width:70px;" onchange="updatePayCurLabel();calc()"><option>USD</option><option>LBP</option></select></div>
+            <button type="button" class="debit-remove" onclick="removeExtraPayment()" title="Remove">✕</button>
+          </div>
+        </div>
+        <button type="button" class="add-debit-btn" id="add-pay-btn" onclick="addExtraPayment()">+ Add other payment method</button>
       </div>
       <div class="totals-box">
         <div class="tot-row"><span class="tot-lbl">Total income (LBP)</span><span class="tot-val" id="tot-lbp">—</span></div>
@@ -595,24 +619,67 @@ function getDebits(){
 }
 function getTotalDebit(){return getDebits().reduce((s,d)=>s+d.amount,0);}
 
+// ── EXTRA PAYMENT METHOD HELPERS ─────────────────────────────────────────────
+function addExtraPayment(){
+  document.getElementById('pay-extra-wrap').style.display='block';
+  document.getElementById('add-pay-btn').style.display='none';
+  // populate method dropdown from lists
+  const sel=document.getElementById('i-pay-method');
+  if(sel){sel.innerHTML=D.lists.paymentMethod.filter(m=>m!=='Cash').map(m=>`<option>${m}</option>`).join('');}
+  calc();
+}
+function removeExtraPayment(){
+  document.getElementById('pay-extra-wrap').style.display='none';
+  document.getElementById('add-pay-btn').style.display='inline-flex';
+  const a=document.getElementById('i-pay-amount');if(a)a.value='';
+  calc();
+}
+function updatePayCurLabel(){
+  const cur=document.getElementById('i-pay-cur')?.value||'USD';
+  const lbl=document.getElementById('i-pay-cur-label');
+  if(lbl)lbl.textContent=cur;
+}
+function getExtraPayment(){
+  const wrap=document.getElementById('pay-extra-wrap');
+  if(!wrap||wrap.style.display==='none')return null;
+  const method=document.getElementById('i-pay-method')?.value||'';
+  const amount=parseFloat((document.getElementById('i-pay-amount')?.value||'0').replace(/,/g,''))||0;
+  const cur=document.getElementById('i-pay-cur')?.value||'USD';
+  if(!amount)return null;
+  return{method,amount,cur};
+}
+function getExtraPayUsd(rate){
+  const ep=getExtraPayment();if(!ep)return 0;
+  return ep.cur==='USD'?ep.amount:ep.amount/rate;
+}
+
 // ── CALC ──────────────────────────────────────────────────────────────────────
 function calc(){
   const lbp=raw('i-lbp'),usd=raw('i-usd'),rate=parseFloat(document.getElementById('i-rate')?.value)||90000,main=raw('i-main');
   const totalDebitUsd=getTotalDebit();
-  // Debit is INCLUDED in total income (it's part of the day's takings, just owed by individuals)
-  const totalUsdWithDebit=usd+totalDebitUsd;
-  const tLbp=lbp+(totalUsdWithDebit*rate);
+  const extraPayUsd=getExtraPayUsd(rate);
+  // Total income USD = cash USD + debit + extra payment
+  const totalUsdAll=usd+totalDebitUsd+extraPayUsd;
+  const tLbp=lbp+(totalUsdAll*rate);
   const tUsd=tLbp/rate;
+
   const tl=document.getElementById('tot-lbp'),tu=document.getElementById('tot-usd');
   if(tl)tl.textContent=tLbp>0?fmtN(Math.round(tLbp))+' LBP':'—';
   if(tu)tu.textContent=tUsd>0?'$'+tUsd.toFixed(2):'—';
-  // Update debit total display
+
+  // Cash = Total LBP − main reading, converted to USD (what's left after subtracting machine reading)
+  const cashLbp=tLbp-main;
+  const cashUsd=cashLbp/rate;
+  const cd=document.getElementById('i-cash-display');
+  if(cd)cd.textContent=cashLbp>0?'$'+cashUsd.toFixed(2)+' ('+fmtN(Math.round(cashLbp))+' LBP)':'—';
+
+  // Debit total label
   const dt=document.getElementById('debit-total');
   if(dt)dt.textContent=totalDebitUsd>0?'Total debit: $'+fmtN(totalDebitUsd):'';
+
   const tb=document.getElementById('tip-box');
   if(tb&&isMgr()){
     tb.style.display='block';
-    // Tips = Total USD (including debit) minus main reading — debit is part of the income
     const tip=tUsd-(main/rate);
     const neg=tip<0;tb.className='tip-box '+(neg?'neg':'pos');
     document.getElementById('tip-val').textContent=(neg?'-$':'$')+Math.abs(tip).toFixed(2);
@@ -698,7 +765,14 @@ function openEditIncome(r){
   document.getElementById('debit-rows').innerHTML='';
   if(r.debits&&r.debits.length){r.debits.forEach(d=>addDebitRow(d.name,d.amount));}
   else if(parseFloat(r.debit)>0){addDebitRow(r.debitName||'',parseFloat(r.debit));}
-  document.getElementById('i-method').value=r.method||'Cash';
+  // Restore extra payment if present
+  if(r.extraPayMethod&&r.extraPayAmount){
+    addExtraPayment();
+    document.getElementById('i-pay-method').value=r.extraPayMethod;
+    setVal('i-pay-amount',r.extraPayAmount);
+    document.getElementById('i-pay-cur').value=r.extraPayCur||'USD';
+    updatePayCurLabel();
+  } else { removeExtraPayment(); }
   // Remark: stored as "debit detail | manual remark" — show only manual part in edit
   const storedRemark=r.remark||'';
   const manualOnly=storedRemark.includes(' | ')?storedRemark.split(' | ').slice(1).join(' | '):
@@ -780,15 +854,17 @@ async function saveIncome(isEdit){
 
   const debits=getDebits();
   const totalDebitUsd=debits.reduce((s,d)=>s+d.amount,0);
-  const incomeUsdWithDebit=usd+totalDebitUsd; // debit included in income USD for sheet col L
+  const extraPay=getExtraPayment();
+  const extraPayUsd=getExtraPayUsd(rate);
+  const incomeUsdWithAll=usd+totalDebitUsd+extraPayUsd; // col L = all USD income
   const debitNames=debits.map(d=>d.name).join(', ');
   const debitRemark=debits.length?debits.map(d=>d.name+': $'+fmtN(d.amount)).join(', '):'';
   const manualRemark=document.getElementById('i-rem')?.value||'';
   const fullRemark=debitRemark&&manualRemark?debitRemark+' | '+manualRemark:debitRemark||manualRemark;
   const record={id:D.editRecord?.id||Date.now(),type:'income',date,staffArr:getStaff(),main,
-    incomeLbp:lbp,incomeUsd:incomeUsdWithDebit,incomeUsdRaw:usd,rate,
+    incomeLbp:lbp,incomeUsd:incomeUsdWithAll,incomeUsdRaw:usd,rate,
     debit:totalDebitUsd,debitName:debitNames,debits,
-    method:document.getElementById('i-method')?.value||'Cash',
+    extraPayMethod:extraPay?.method||'',extraPayAmount:extraPay?.amount||0,extraPayCur:extraPay?.cur||'',
     remark:fullRemark,totalLbp:tLbp,totalUsd:tUsd,ref,
     by:D.users[D.cur].name,ts:new Date().toISOString(),row:D.editRecord?.row};
 
@@ -879,9 +955,9 @@ async function saveExpense(mode){
 // ── FORM RESETS ───────────────────────────────────────────────────────────────
 function resetIncomeForm(){
   ['i-lbp','i-usd','i-rem','i-main'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('i-method').value='Cash';
   document.getElementById('debit-rows').innerHTML='';
   const dt=document.getElementById('debit-total');if(dt)dt.textContent='';
+  removeExtraPayment();
   document.querySelectorAll('#staff-chips .chip').forEach(c=>c.classList.remove('on'));
   removePhoto('income');clearAllErrors();calc();
   document.getElementById('i-upload-progress').textContent='';
