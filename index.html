@@ -459,24 +459,13 @@ async function syncStaff(){
 }
 
 function mergeSheetLists(sheetLists){
-  // Map PickList sheet column headers to app list keys
-  // Adjust these mappings to match your actual PickList column headers
-  const MAP = {
-    'Suppliers':      'suppliers',
-    'Category':       'categories',
-    'Currency':       'currency',
-    'Staff':          'staffNames',
-    'Payed In':       'paidIn',
-    'Payment Method': 'paymentMethod',
-    'Credit':         'credit',
-    'Payed By':       'paidBy',
-    'Legality':       'legality',
-  };
-  Object.entries(MAP).forEach(([sheetKey, appKey])=>{
-    if(sheetLists[sheetKey]&&sheetLists[sheetKey].length){
-      D.lists[appKey]=sheetLists[sheetKey];
-    }
+  // The script returns lists by app key directly (from PICKLIST_MAP)
+  // Just merge whatever keys come back
+  Object.entries(sheetLists).forEach(([key,vals])=>{
+    if(vals&&vals.length) D.lists[key]=vals;
   });
+  // staffNames feeds staff chips — keep in sync
+  if(sheetLists.staffNames) D.lists.staffNames=sheetLists.staffNames;
 }
 
 function setSyncStatus(type,msg){
@@ -551,7 +540,12 @@ function setSyncDot(state){const d=document.getElementById('main-sync-dot');if(d
 // ── CHIPS & DROPDOWNS ─────────────────────────────────────────────────────────
 function renderChips(){
   const el=document.getElementById('staff-chips');if(!el)return;
-  const names=D.users.filter(u=>u.role!=='Manager').map(u=>u.name);names.push('None');
+  // Use staffNames from PickList if available, otherwise fall back to users list
+  let names=D.lists.staffNames&&D.lists.staffNames.length
+    ? D.lists.staffNames
+    : D.users.filter(u=>u.role!=='Manager').map(u=>u.name);
+  names=names.filter(n=>n&&n!=='None');
+  names.push('None');
   el.innerHTML=names.map(n=>`<div class="chip" onclick="togChip(this,'${n}')">${n}</div>`).join('');
 }
 function togChip(el,name){
@@ -564,8 +558,14 @@ function getStaff(){return[...document.querySelectorAll('#staff-chips .chip.on')
 
 function populateDDs(){
   const sel=(id,arr,blank)=>{const e=document.getElementById(id);if(!e)return;e.innerHTML=(blank?`<option value="">${blank}</option>`:'')+arr.map(v=>`<option>${v}</option>`).join('');};
-  sel('i-dname',D.lists.credit,'—');sel('e-sup',D.lists.suppliers,'— Select —');
-  sel('e-cat',D.lists.categories,'— Select —');sel('e-paidin',D.lists.paidIn,'');sel('e-paidby',D.lists.paidBy,'');
+  sel('i-dname',  D.lists.credit||[],        '—');
+  sel('e-sup',    D.lists.suppliers||[],     '— Select —');
+  sel('e-cat',    D.lists.categories||[],    '— Select —');
+  sel('e-paidin', D.lists.paidIn||MONTHS,    '');
+  sel('e-paidby', D.lists.paidBy||[],        '');
+  // Currency dropdowns
+  const curOpts=(D.lists.currency||['USD','LBP']).map(v=>`<option>${v}</option>`).join('');
+  ['e-cur','i-pay-cur'].forEach(id=>{const e=document.getElementById(id);if(e){const v=e.value;e.innerHTML=curOpts;if(v)e.value=v;}});
   const pi=document.getElementById('e-paidin');if(pi)pi.value=MONTHS[new Date().getMonth()];
 }
 
@@ -651,7 +651,9 @@ function addExtraPayment(method='',amount='',cur='USD'){
   const container=document.getElementById('extra-pay-rows');
   const idx=Date.now();
   const methods=getPayMethods();
-  const opts=methods.map(m=>`<option ${m===method?'selected':''}>${m}</option>`).join('');
+  const opts=methods.length
+    ? methods.map(m=>`<option ${m===method?'selected':''}>${m}</option>`).join('')
+    : '<option>Card</option>';
   const row=document.createElement('div');
   row.className='pay-extra-row';row.dataset.idx=idx;
   row.innerHTML=`
@@ -1108,11 +1110,33 @@ function mTab(t){
 }
 async function syncStaffNow(){toast('Refreshing...');await syncStaff();renderChips();mTab('staff');toast('Staff updated ✓');}
 
-const PICK_KEYS=[{key:'suppliers',label:'Suppliers'},{key:'categories',label:'Category'},{key:'currency',label:'Currency'},{key:'paidIn',label:'Paid In'},{key:'paymentMethod',label:'Payment'},{key:'credit',label:'Debit From'},{key:'paidBy',label:'Paid By'},{key:'legality',label:'Legality'}];
+const PICK_KEYS=[
+  {key:'staffNames',   label:'Staff on shift'},
+  {key:'suppliers',    label:'Suppliers'},
+  {key:'categories',   label:'Category'},
+  {key:'currency',     label:'Currency'},
+  {key:'paidIn',       label:'Paid In'},
+  {key:'paymentMethod',label:'Payment Method'},
+  {key:'credit',       label:'Debit From'},
+  {key:'paidBy',       label:'Paid By'},
+];
 function renderPickLists(el){el.innerHTML=`<div class="sec-title">Manage pick lists</div><div class="pick-tabs">${PICK_KEYS.map(k=>`<div class="pt ${k.key===D.pickTab?'on':''}" onclick="setPT('${k.key}')">${k.label}</div>`).join('')}</div><div id="pick-content"></div>`;renderPC();}
 function setPT(k){D.pickTab=k;document.querySelectorAll('.pt').forEach(t=>{const f=PICK_KEYS.find(x=>x.key===k);t.classList.toggle('on',!!f&&t.textContent===f.label);});renderPC();}
 function renderPC(){const el=document.getElementById('pick-content');if(!el)return;const items=D.lists[D.pickTab]||[];el.innerHTML=`<div style="max-height:220px;overflow-y:auto;">`+items.map((s,i)=>`<div class="list-item"><span>${s}</span><button class="mini-r" onclick="rmPI('${D.pickTab}',${i})">✕</button></div>`).join('')+`</div><div class="add-row"><input id="pi-new" placeholder="Add new item" style="flex:1;"><button class="abtn" onclick="addPI('${D.pickTab}')">+ Add</button></div>`;}
-function addPI(key){const v=document.getElementById('pi-new')?.value.trim();if(!v)return;if(!D.lists[key].includes(v)){D.lists[key].push(v);if(['suppliers','categories','paidIn','paidBy','credit'].includes(key))D.lists[key].sort();}saveLocal();populateDDs();renderPC();toast(v+' added');}
+function addPI(key){
+  const v=document.getElementById('pi-new')?.value.trim();if(!v)return;
+  if(!D.lists[key])D.lists[key]=[];
+  if(!D.lists[key].includes(v)){
+    D.lists[key].push(v);
+    if(['suppliers','categories','paidIn','paidBy','credit','staffNames'].includes(key))D.lists[key].sort();
+  }
+  saveLocal();populateDDs();renderChips();renderPC();
+  // Also write to Google Sheet PickList
+  api('addToList',{listKey:key,value:v}).then(r=>{
+    if(r.success)toast(v+' added to app and sheet ✓');
+    else toast(v+' added to app (sheet sync failed)');
+  }).catch(()=>toast(v+' added to app (offline)'));
+}
 function rmPI(key,i){D.lists[key].splice(i,1);saveLocal();populateDDs();renderPC();toast('Removed');}
 function openPinM(i){D.editIdx=i;document.getElementById('modal-pin-title').textContent='Change PIN — '+D.users[i].name;document.getElementById('modal-pin-val').value='';document.getElementById('modal-pin').classList.add('on');}
 function savePin(){const v=document.getElementById('modal-pin-val').value.trim();if(!/^\d{4}$/.test(v)){toast('PIN must be 4 digits');return;}D.users[D.editIdx].pin=v;saveLocal();toast('PIN changed locally. Update Staff tab in Sheet to make it permanent.');closeModal('modal-pin');mTab('staff');}
