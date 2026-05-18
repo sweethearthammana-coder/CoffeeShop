@@ -22,12 +22,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ubtn:active{background:#f5f5f5;}
 .ava{width:44px;height:44px;border-radius:50%;background:#e8f4fd;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:#1a6fb5;flex-shrink:0;}
 .ava.mgr{background:#fde8e8;color:#b51a1a;}
-.info-box{background:#f5f5f5;border-radius:12px;padding:14px;font-size:13px;color:#666;margin-top:20px;line-height:1.5;}
+.ibox{background:#f5f5f5;border-radius:12px;padding:14px;font-size:13px;color:#666;margin-top:16px;line-height:1.5;}
+.sync-status{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;font-size:13px;margin-top:10px;}
+.sync-status.ok{background:#eaf3de;color:#27500a;}
+.sync-status.err{background:#fcebeb;color:#791f1f;}
+.sync-status.loading{background:#f5f5f5;color:#666;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot.ok{background:#3b6d11;}.dot.err{background:#a32d2d;}.dot.loading{background:#999;}
 .pin-wrap{padding:48px 24px 24px;}
 .pin-title{font-size:20px;font-weight:600;margin-bottom:4px;}
 .pin-sub{font-size:14px;color:#666;margin-bottom:8px;}
 .pin-dots{display:flex;gap:14px;justify-content:center;padding:28px 0 24px;}
-.pd{width:16px;height:16px;border-radius:50%;border:2px solid #ccc;transition:all .15s;}
+.pd{width:16px;height:16px;border-radius:50%;border:2px solid #ccc;}
 .pd.f{background:#1a1a1a;border-color:#1a1a1a;}
 .pin-err{text-align:center;color:#c0392b;font-size:14px;min-height:20px;margin-bottom:12px;}
 .pkey-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
@@ -37,7 +43,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pg-hdr{padding:20px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;}
 .pg-title{font-size:26px;font-weight:700;}
 .pg-sub{font-size:14px;color:#666;margin-top:2px;}
-.logout-btn{font-size:13px;color:#666;cursor:pointer;padding:4px 0;margin-top:8px;}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.logout-btn{font-size:13px;color:#666;cursor:pointer;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#3b6d11;}
+.sync-dot.syncing{background:#f59e0b;animation:pulse 1s infinite;}
+.sync-dot.err{background:#a32d2d;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 .stat-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 20px;}
 .stat{background:#f5f5f5;border-radius:16px;padding:16px;}
 .stat-lbl{font-size:13px;color:#666;margin-bottom:6px;}
@@ -77,10 +88,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-row{display:flex;gap:10px;margin-top:4px;}
 .save-btn{flex:1;padding:16px;background:#1a1a1a;color:#fff;border:none;border-radius:16px;font-size:15px;font-weight:600;cursor:pointer;}
 .save-btn:active{opacity:.8;}
-.save-btn.green{background:#27500a;}
-.save-btn.red-bg{background:#791f1f;}
-.save-btn.secondary{background:#f5f5f5;color:#1a1a1a;}
-.save-btn.secondary:active{background:#e5e5e5;}
+.save-btn.sec{background:#f5f5f5;color:#1a1a1a;}
+.save-btn.grn{background:#27500a;}
+.save-btn.red{background:#791f1f;}
 .hi{padding:14px 0;border-bottom:1px solid #f0f0f0;}
 .hi-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
 .hi-desc{font-size:15px;font-weight:600;flex:1;line-height:1.3;}
@@ -93,6 +103,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .hf{padding:7px 16px;font-size:13px;border:1px solid #e0e0e0;border-radius:20px;cursor:pointer;color:#666;}
 .hf.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
 .empty-msg{padding:40px 0;text-align:center;color:#999;font-size:15px;}
+.loading-msg{padding:40px 0;text-align:center;color:#999;font-size:15px;}
 .nav-bot{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;background:#fff;border-top:1px solid #e5e5e5;padding:6px 0 max(6px,env(safe-area-inset-bottom));z-index:100;}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 0;font-size:11px;color:#999;font-weight:500;}
 .nb.on{color:#1a1a1a;}
@@ -113,14 +124,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pt.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
 .col-ref{background:#f5f5f5;border-radius:12px;padding:12px 14px;font-size:11px;font-family:monospace;color:#666;margin-bottom:14px;line-height:1.9;}
 .info-note{background:#fff8e6;border-radius:12px;padding:14px;font-size:13px;color:#856404;margin-bottom:16px;line-height:1.5;}
-.month-filter{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
-.month-filter label{font-size:13px;color:#666;font-weight:500;}
-.month-sel{border:1px solid #e0e0e0;border-radius:10px;padding:7px 12px;font-size:14px;background:#fff;color:#1a1a1a;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;}
+.month-sel-row{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
+.month-sel-row label{font-size:13px;color:#666;font-weight:500;}
+.msel{border:1px solid #e0e0e0;border-radius:10px;padding:7px 12px;font-size:14px;background:#fff;color:#1a1a1a;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;}
 .toast-bar{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap;}
 .toast-bar.show{opacity:1;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center;z-index:200;}
 .modal-bg.on{display:flex;}
-.modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 24px max(24px,env(safe-area-inset-bottom));width:100%;max-width:430px;max-height:90vh;overflow-y:auto;}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 24px max(24px,env(safe-area-inset-bottom));width:100%;max-width:430px;max-height:80vh;overflow-y:auto;}
 .modal h3{font-size:18px;font-weight:700;margin-bottom:20px;}
 .modal input{width:100%;border:none;border-bottom:1.5px solid #e0e0e0;padding:10px 0;font-size:17px;background:transparent;color:#1a1a1a;outline:none;margin-bottom:16px;}
 .modal-btns{display:flex;gap:10px;margin-top:8px;}
@@ -130,29 +141,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .perm-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;}
 .perm-row input{width:20px;height:20px;cursor:pointer;flex-shrink:0;}
 .perm-row span{font-size:16px;}
-.install-banner{background:#eaf3de;border-radius:16px;padding:16px;margin:16px 20px;border:1px solid #c0dd97;display:none;}
+.install-banner{background:#eaf3de;border-radius:16px;padding:16px;margin:0 0 16px;border:1px solid #c0dd97;display:none;}
 .install-banner.show{display:block;}
 .ib-title{font-size:15px;font-weight:700;color:#27500a;margin-bottom:6px;}
 .ib-steps{font-size:13px;color:#3b6d11;line-height:1.8;}
+.offline-banner{background:#fff8e6;border-radius:12px;padding:10px 14px;font-size:13px;color:#856404;margin-bottom:14px;display:none;}
+.offline-banner.show{display:block;}
 </style>
 </head>
 <body>
 <div id="toast" class="toast-bar"></div>
 
+<!-- LOGIN -->
 <div id="s-login" class="scr on">
   <div class="login-wrap">
     <div class="login-logo">☕</div>
     <div class="login-title">Coffee Shop</div>
     <div class="login-sub">Daily Operations</div>
-    <div id="usr-list"></div>
-    <div class="info-box">Data is saved on this device. Use Export in Manager tab to copy CSV and paste into Google Sheets monthly.</div>
-  </div>
-  <div class="install-banner" id="install-banner">
-    <div class="ib-title">📲 Install as App</div>
-    <div class="ib-steps" id="install-steps"></div>
+    <div id="sync-status" class="sync-status loading"><div class="dot loading" id="sync-dot"></div><span id="sync-msg">Connecting to Google Sheets...</span></div>
+    <div id="usr-list" style="margin-top:16px;"></div>
+    <div class="install-banner" id="install-banner">
+      <div class="ib-title">📲 Install as App</div>
+      <div class="ib-steps" id="install-steps"></div>
+    </div>
   </div>
 </div>
 
+<!-- PIN -->
 <div id="s-pin" class="scr">
   <div class="pin-wrap">
     <div class="pin-title" id="pin-who">Enter PIN</div>
@@ -171,10 +186,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- MAIN -->
 <div id="s-main" class="scr">
   <div class="pg-hdr">
     <div><div class="pg-title">Coffee Shop</div><div class="pg-sub">Daily Operations</div></div>
-    <div class="logout-btn" onclick="logout()">Logout</div>
+    <div class="hdr-right">
+      <div class="logout-btn" onclick="logout()">Logout</div>
+      <div id="main-sync-dot" class="sync-dot" title="Synced"></div>
+    </div>
   </div>
   <div class="stat-row">
     <div class="stat"><div class="stat-lbl">Today's income</div><div class="stat-val" id="s-inc">$0.00</div></div>
@@ -185,11 +204,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="stab" id="t-expenses" onclick="secTab('expenses')">Expenses</div>
   </div>
 
+  <!-- INCOME -->
   <div id="panel-income" class="fa">
-    <div class="sub-tabs">
-      <div class="sub-tab on" id="it-new" onclick="iTab('new')">+ New Entry</div>
-      <div class="sub-tab" id="it-hist" onclick="iTab('hist')">History</div>
-    </div>
+    <div class="sub-tabs"><div class="sub-tab on" id="it-new" onclick="iTab('new')">+ New Entry</div><div class="sub-tab" id="it-hist" onclick="iTab('hist')">History</div></div>
     <div id="income-new">
       <div class="field"><label class="flbl">Date</label><input type="date" id="i-date" class="fi"></div>
       <div class="field"><label class="flbl">Staff on shift</label><div class="chip-row" id="staff-chips"></div></div>
@@ -221,11 +238,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="income-hist" style="display:none;"></div>
   </div>
 
+  <!-- EXPENSES -->
   <div id="panel-expenses" class="fa" style="display:none;">
-    <div class="sub-tabs">
-      <div class="sub-tab on" id="et-new" onclick="eTab('new')">+ New Entry</div>
-      <div class="sub-tab" id="et-hist" onclick="eTab('hist')">History</div>
-    </div>
+    <div class="sub-tabs"><div class="sub-tab on" id="et-new" onclick="eTab('new')">+ New Entry</div><div class="sub-tab" id="et-hist" onclick="eTab('hist')">History</div></div>
     <div id="expense-new">
       <div class="field"><label class="flbl">Date</label><input type="date" id="e-date" class="fi"></div>
       <div class="field"><label class="flbl">Supplier</label><div class="sw"><select class="fsel" id="e-sup"></select></div></div>
@@ -244,13 +259,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="field"><label class="flbl">Paid by</label><div class="sw"><select class="fsel" id="e-paidby"></select></div></div>
       </div>
       <div class="btn-row">
-        <button class="save-btn secondary" onclick="saveExpense(true)">Save &amp; re-enter</button>
+        <button class="save-btn sec" onclick="saveExpense(true)">Save &amp; re-enter</button>
         <button class="save-btn" onclick="saveExpense(false)">Save entry</button>
       </div>
     </div>
     <div id="expense-hist" style="display:none;"></div>
   </div>
 
+  <!-- HISTORY -->
   <div id="panel-hist" class="fa" style="display:none;">
     <div class="hist-filter">
       <div class="hf on" id="hf-all" onclick="setHF('all')">All</div>
@@ -260,9 +276,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="hist-list"></div>
   </div>
 
-  <!-- MANAGER PANEL — tabs rendered dynamically based on role -->
+  <!-- MANAGER -->
   <div id="panel-mgr" class="fa" style="display:none;">
-    <div class="sub-tabs" style="margin-bottom:20px;" id="mgr-tab-bar"></div>
+    <div class="sub-tabs" id="mgr-tab-bar" style="margin-bottom:20px;"></div>
     <div id="mgr-body"></div>
   </div>
 
@@ -295,46 +311,88 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const ALL_PERMS=['income','expense','history','manager'];
-const DEFAULT_LISTS={
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxBA8G3cWAr9GmJon7vrcHeR42d9P9v6Z3PSKFI2-YumdjgtzD2XM7srx3IzthLJgqBzA/exec';
+const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const ALL_PERMS = ['income','expense','history','manager'];
+
+// ── DEFAULT LISTS (used offline / as fallback) ────────────────────────────────
+const DEFAULT_LISTS = {
   suppliers:["Abdo Gaz","Abou Abdo","Agrifresh","AL Halabi","AL Hani","Anthony biry","Beit Mousallem","Candia - Liban Lait","Ceraf","Cheikh Adel","Chi tayib","Claude Bou sreih","Clement","Coffee shop","ColorTek","Coop","Croum","DOTS","EBA","EDL","Emile Rached","Ema","Faddoul","Fresh up","Georges Maher","Gilbert Khoury","Government","Hilwi w Morra","Houmam nawfal","jihad roukouz 1 dollar","Katalyst","Khayrat Al Jabal","Layal","Maher","Mala","Mansour","Marche urbain","Miled Hatem","Moein","MRG","Muhieddine farhat","Noel","Omega","Other","P. & R Supplies","Pepsi","Pi Distribution","PureCo","Rami ghosn","Rechmaya","Rita Abou Khaled","Spinneys","Staff","The Malt Gallery","TireBouchon","Vincenti","Zen Fraicheur","Zouzou Hatem"],
   categories:["Alcohol","Coffee","Complimentary food and drink","Consultancy fees","Croissant","Delivery","Depreciation","Dessert","Dividends","Heating Fuel","Ice","IceCream","Ingredients","Maintenance","Marketing and events","Milk","Non alcohol drinks","Other Fixed","Other Variable","Rent","Salaries","Staff","Supplies and cleaning","Syrup","Take Away Supplies","Taxes","Tea","Telecomunication","Utilities"],
-  currency:["USD","LBP"],paidIn:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-  paymentMethod:["Cash","Card"],credit:["Chady","Nehme","Jose","Jean","Pierre","Nathan","Dani","Other"],
+  currency:["USD","LBP"],paidIn:[...MONTHS],paymentMethod:["Cash","Card"],
+  credit:["Chady","Nehme","Jose","Jean","Pierre","Nathan","Dani","Other"],
   paidBy:["Coff Cash","Pub","Jean","Jose","Pierre","Whish"],legality:["Official","Unofficial"]
 };
 
-let D={
-  users:[
-    {name:"Jose",role:"Manager",pin:"1234",perms:["income","expense","history","manager"]},
-    {name:"Dani",role:"Staff",pin:"0000",perms:["income","expense","history"]},
-    {name:"Nathan",role:"Staff",pin:"0000",perms:["income","expense","history"]}
-  ],
-  records:[],lists:JSON.parse(JSON.stringify(DEFAULT_LISTS)),
-  cur:null,loginTgt:null,pinBuf:"",
-  sTab:"income",iT:"new",eT:"new",mT:null,
-  hF:"all",pickTab:"suppliers",editIdx:null
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let D = {
+  users: [], records: [],
+  lists: JSON.parse(JSON.stringify(DEFAULT_LISTS)),
+  cur: null, loginTgt: null, pinBuf: '',
+  sTab:'income', iT:'new', eT:'new', mT:null,
+  hF:'all', pickTab:'suppliers', editIdx:null,
+  syncing: false
 };
 
+// ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 function sl(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
-function loadData(){const r=sl('csapp_rec');if(r)D.records=r;const u=sl('csapp_usr');if(u)D.users=u;const l=sl('csapp_lists');if(l)D.lists=l;}
-function saveData(){sl('csapp_rec',D.records);sl('csapp_usr',D.users);sl('csapp_lists',D.lists);}
+function loadLocal(){
+  const u=sl('cs7_usr'); if(u)D.users=u;
+  const r=sl('cs7_rec'); if(r)D.records=r;
+  const l=sl('cs7_lists'); if(l)D.lists=l;
+}
+function saveLocal(){sl('cs7_usr',D.users);sl('cs7_rec',D.records);sl('cs7_lists',D.lists);}
+
+// ── API CALLS ─────────────────────────────────────────────────────────────────
+async function api(action, data={}) {
+  const body = JSON.stringify({action, ...data});
+  const res  = await fetch(GAS_URL, {method:'POST', body});
+  return res.json();
+}
+
+// ── SYNC STAFF FROM SHEET ─────────────────────────────────────────────────────
+async function syncStaff() {
+  setSyncStatus('loading','Connecting to Google Sheets...');
+  try {
+    const result = await api('getStaff');
+    if (result.error) throw new Error(result.error);
+    if (result.staff && result.staff.length > 0) {
+      D.users = result.staff;
+      saveLocal();
+      setSyncStatus('ok','Connected — data syncs to Google Sheets');
+    } else {
+      throw new Error('No staff found in sheet');
+    }
+  } catch(e) {
+    // Fall back to locally cached users if available
+    if (D.users.length > 0) {
+      setSyncStatus('err','Offline — using cached staff list');
+    } else {
+      setSyncStatus('err','Cannot connect — check internet connection');
+    }
+  }
+  renderLogin();
+}
+
+function setSyncStatus(type, msg) {
+  const el  = document.getElementById('sync-status');
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-msg');
+  el.className  = 'sync-status ' + type;
+  dot.className = 'dot ' + type;
+  txt.textContent = msg;
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
 function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0);}
 function isMgr(){return D.users[D.cur]?.role==='Manager';}
 function hasPerm(p){return D.users[D.cur]?.perms?.includes(p);}
 
-function showInstallBanner(){
-  const ua=navigator.userAgent,isIOS=/iPhone|iPad|iPod/.test(ua),isAndroid=/Android/.test(ua);
-  const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
-  if(isStandalone)return;
-  const banner=document.getElementById('install-banner'),steps=document.getElementById('install-steps');
-  if(isIOS){banner.classList.add('show');steps.innerHTML='1. Tap the <strong>Share</strong> button (□↑) at the bottom of Safari<br>2. Tap <strong>"Add to Home Screen"</strong><br>3. Tap <strong>Add</strong> — done!';}
-  else if(isAndroid){banner.classList.add('show');steps.innerHTML='1. Tap the <strong>⋮ menu</strong> in Chrome<br>2. Tap <strong>"Add to Home screen"</strong><br>3. Tap <strong>Add</strong> — done!';}
-}
-
-function initLogin(){
-  document.getElementById('usr-list').innerHTML=D.users.map((u,i)=>`
+function renderLogin() {
+  const ul = document.getElementById('usr-list');
+  if (!D.users.length) { ul.innerHTML='<div style="text-align:center;color:#999;padding:20px 0;font-size:14px;">No staff loaded. Check internet connection.</div>'; return; }
+  ul.innerHTML = D.users.map((u,i)=>`
     <div class="ubtn" onclick="selUser(${i})">
       <div class="ava ${u.role==='Manager'?'mgr':''}">${u.name[0]}</div>
       <div style="flex:1"><div style="font-size:16px;font-weight:600;">${u.name}</div><div style="font-size:13px;color:#999;margin-top:2px;">${u.role}</div></div>
@@ -343,9 +401,18 @@ function initLogin(){
   showInstallBanner();
 }
 
-function selUser(i){D.loginTgt=i;D.pinBuf="";document.getElementById('pin-who').textContent='Hello, '+D.users[i].name;document.getElementById('pin-err').textContent='';updateDots();show('s-pin');}
+function showInstallBanner(){
+  const ua=navigator.userAgent,isIOS=/iPhone|iPad|iPod/.test(ua),isAndroid=/Android/.test(ua);
+  const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+  if(isStandalone)return;
+  const banner=document.getElementById('install-banner'),steps=document.getElementById('install-steps');
+  if(isIOS){banner.classList.add('show');steps.innerHTML='1. Tap the <strong>Share</strong> button (□↑) in Safari<br>2. Tap <strong>"Add to Home Screen"</strong><br>3. Tap <strong>Add</strong>';}
+  else if(isAndroid){banner.classList.add('show');steps.innerHTML='1. Tap the <strong>⋮ menu</strong> in Chrome<br>2. Tap <strong>"Add to Home screen"</strong><br>3. Tap <strong>Add</strong>';}
+}
+
+function selUser(i){D.loginTgt=i;D.pinBuf='';document.getElementById('pin-who').textContent='Hello, '+D.users[i].name;document.getElementById('pin-err').textContent='';updateDots();show('s-pin');}
 function pk(k){
-  if(k==='C')D.pinBuf="";else if(k==='<')D.pinBuf=D.pinBuf.slice(0,-1);else if(D.pinBuf.length<4)D.pinBuf+=k;
+  if(k==='C')D.pinBuf='';else if(k==='<')D.pinBuf=D.pinBuf.slice(0,-1);else if(D.pinBuf.length<4)D.pinBuf+=k;
   updateDots();document.getElementById('pin-err').textContent='';
   if(D.pinBuf.length===4)checkPin();
 }
@@ -353,27 +420,51 @@ function updateDots(){for(let i=1;i<=4;i++)document.getElementById('pd'+i).class
 function checkPin(){
   const u=D.users[D.loginTgt];
   if(D.pinBuf===u.pin){D.cur=D.loginTgt;show('s-main');initMain();}
-  else{document.getElementById('pin-err').textContent='Incorrect PIN, try again';D.pinBuf="";updateDots();}
+  else{document.getElementById('pin-err').textContent='Incorrect PIN — try again';D.pinBuf='';updateDots();}
 }
-function logout(){D.cur=null;show('s-login');initLogin();}
+function logout(){D.cur=null;show('s-login');syncStaff();}
 
+// ── MAIN ──────────────────────────────────────────────────────────────────────
 function initMain(){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('i-date').value=today;
   document.getElementById('e-date').value=today;
   document.getElementById('i-rate').value='90000';
-  renderStats();renderStaffChips();populateDDs();renderNav();
+  renderChips();populateDDs();renderNav();
   secTab(hasPerm('income')?'income':'expense');
+  loadTodayStats();
 }
+
+async function loadTodayStats(){
+  try {
+    const result = await api('getRecords',{type:'all'});
+    if(result.records){
+      D.records = result.records;
+      saveLocal();
+    }
+  } catch(e) { /* use cached */ }
+  renderStats();
+}
+
 function renderStats(){
   const today=new Date().toISOString().split('T')[0];
-  const tr=D.records.filter(r=>r.date===today);
-  const inc=tr.filter(r=>r.type==='income').reduce((s,r)=>s+(r.totalUsd||0),0);
-  const exp=tr.filter(r=>r.type==='expense').reduce((s,r)=>s+(r.amtUsd||0),0);
+  const todayStr = fmtDate(new Date(today + 'T12:00:00'));
+  const tr=D.records.filter(r=>{
+    const rd = typeof r.date === 'string' ? r.date : String(r.date);
+    return rd === todayStr || rd === today;
+  });
+  const inc=tr.filter(r=>r.type==='income').reduce((s,r)=>s+(parseFloat(r.totalUsd)||0),0);
+  const exp=tr.filter(r=>r.type==='expense').reduce((s,r)=>s+(parseFloat(r.amtUsd)||0),0);
   document.getElementById('s-inc').textContent='$'+inc.toFixed(2);
   document.getElementById('s-exp').textContent='$'+exp.toFixed(2);
 }
-function renderStaffChips(){
+
+function setSyncDot(state){
+  const d=document.getElementById('main-sync-dot');
+  if(d)d.className='sync-dot'+(state==='syncing'?' syncing':state==='err'?' err':'');
+}
+
+function renderChips(){
   const el=document.getElementById('staff-chips');if(!el)return;
   const names=D.users.filter(u=>u.role!=='Manager').map(u=>u.name);names.push('None');
   el.innerHTML=names.map(n=>`<div class="chip" onclick="togChip(this,'${n}')">${n}</div>`).join('');
@@ -384,12 +475,14 @@ function togChip(el,name){
   calc();
 }
 function getStaff(){return[...document.querySelectorAll('#staff-chips .chip.on')].map(c=>c.textContent);}
+
 function populateDDs(){
   const sel=(id,arr,blank)=>{const e=document.getElementById(id);if(!e)return;e.innerHTML=(blank?`<option value="">${blank}</option>`:'')+arr.map(v=>`<option>${v}</option>`).join('');};
-  sel('i-dname',D.lists.credit,'—');sel('e-sup',D.lists.suppliers,'— Select supplier —');
-  sel('e-cat',D.lists.categories,'— Select category —');sel('e-paidin',D.lists.paidIn,'');sel('e-paidby',D.lists.paidBy,'');
+  sel('i-dname',D.lists.credit,'—');sel('e-sup',D.lists.suppliers,'— Select —');
+  sel('e-cat',D.lists.categories,'— Select —');sel('e-paidin',D.lists.paidIn,'');sel('e-paidby',D.lists.paidBy,'');
   const pi=document.getElementById('e-paidin');if(pi)pi.value=MONTHS[new Date().getMonth()];
 }
+
 function calc(){
   const lbp=raw('i-lbp'),usd=raw('i-usd'),rate=parseFloat(document.getElementById('i-rate')?.value)||90000,main=raw('i-main');
   const tLbp=lbp+(usd*rate),tUsd=tLbp/rate;
@@ -415,171 +508,200 @@ function navTo(k){
   ['panel-income','panel-expenses','panel-hist','panel-mgr'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('sec-tabs').style.display='none';
   if(k==='ops'){document.getElementById('sec-tabs').style.display='';secTab(D.sTab);}
-  else if(k==='history'){document.getElementById('panel-hist').style.display='block';renderHist();}
+  else if(k==='history'){document.getElementById('panel-hist').style.display='block';loadAndRenderHist();}
   else if(k==='manager'){document.getElementById('panel-mgr').style.display='block';renderMgrTabs();}
 }
+function secTab(t){D.sTab=t;['income','expenses'].forEach(x=>{document.getElementById('t-'+x)?.classList.toggle('on',x===t);document.getElementById('panel-'+x).style.display=x===t?'block':'none';});document.getElementById('sec-tabs').style.display='';}
+function iTab(t){D.iT=t;document.getElementById('it-new').classList.toggle('on',t==='new');document.getElementById('it-hist').classList.toggle('on',t==='hist');document.getElementById('income-new').style.display=t==='new'?'block':'none';const h=document.getElementById('income-hist');h.style.display=t==='hist'?'block':'none';if(t==='hist')loadAndRenderTypeHist('income','income-hist');}
+function eTab(t){D.eT=t;document.getElementById('et-new').classList.toggle('on',t==='new');document.getElementById('et-hist').classList.toggle('on',t==='hist');document.getElementById('expense-new').style.display=t==='new'?'block':'none';const h=document.getElementById('expense-hist');h.style.display=t==='hist'?'block':'none';if(t==='hist')loadAndRenderTypeHist('expense','expense-hist');}
+function setHF(f){D.hF=f;['all','income','expense'].forEach(x=>document.getElementById('hf-'+x).classList.toggle('on',x===f));renderHist();}
 
-// ── MANAGER TABS — only show tabs the current user can use ──────────────────
-function getMgrTabs(){
-  // Staff with manager perm see only History (their own panel is history via nav)
-  // Full managers see Staff, Pick Lists, Export
-  if(isMgr())return [{k:'staff',lbl:'Staff'},{k:'lists',lbl:'Pick Lists'},{k:'export',lbl:'Export'}];
-  // Non-manager who somehow has manager perm: only history (shouldn't reach here normally)
-  return [];
+async function loadAndRenderHist(){
+  document.getElementById('hist-list').innerHTML='<div class="loading-msg">Loading from Google Sheets...</div>';
+  try{const r=await api('getRecords',{type:'all'});if(r.records){D.records=r.records;saveLocal();}}catch(e){}
+  renderHist();
 }
+async function loadAndRenderTypeHist(type,elId){
+  document.getElementById(elId).innerHTML='<div class="loading-msg">Loading...</div>';
+  try{const r=await api('getRecords',{type});if(r.records){D.records=[...D.records.filter(x=>x.type!==type),...r.records];saveLocal();}}catch(e){}
+  renderTypeHist(type,elId);
+}
+
+function getFiltered(tf){
+  const today=new Date().toISOString().split('T')[0];
+  const todayFmt=fmtDate(new Date(today+'T12:00:00'));
+  let r=D.records;
+  if(!isMgr())r=r.filter(x=>{const d=String(x.date);return d===todayFmt||d===today;});
+  if(tf&&tf!=='all')r=r.filter(x=>x.type===tf);
+  return r;
+}
+function renderHist(){const recs=getFiltered(D.hF);const el=document.getElementById('hist-list');if(!el)return;el.innerHTML=recs.length?recs.slice(0,80).map(r=>hiHtml(r,isMgr())).join(''):'<div class="empty-msg">No entries yet.</div>';}
+function renderTypeHist(type,id){
+  const today=new Date().toISOString().split('T')[0];const todayFmt=fmtDate(new Date(today+'T12:00:00'));
+  let r=D.records.filter(x=>x.type===type);
+  if(!isMgr())r=r.filter(x=>{const d=String(x.date);return d===todayFmt||d===today;});
+  document.getElementById(id).innerHTML=r.length?r.slice(0,40).map(x=>hiHtml(x,isMgr())).join(''):'<div class="empty-msg">No entries yet.</div>';
+}
+function hiHtml(r,canDel){
+  const isI=r.type==='income';
+  const amt=isI?fmtN(Math.round(parseFloat(r.totalLbp)||0))+' LBP':fmtN(parseFloat(r.amt)||0)+' '+(r.cur||'');
+  const desc=isI?(Array.isArray(r.staffArr)?r.staffArr.filter(x=>x&&x!=='None').join(', '):'')||'Income entry':(r.desc||r.sup||'Expense');
+  const delData=canDel?`data-row="${r.row}" data-type="${r.type}"`:'';
+  return`<div class="hi" id="rec-${r.id}"><div class="hi-top"><span class="hi-desc">${desc}</span><span class="hi-amt" style="color:${isI?'#27500a':'#a32d2d'}">${isI?'+':'-'}${amt}</span></div><div class="hi-meta"><span>${r.date}</span><span class="bdg ${isI?'bdg-i':'bdg-e'}">${isI?'Income':'Expense'}</span>${canDel?`<button class="del-btn" ${delData} onclick="delRec(this)">Delete</button>`:''}</div></div>`;
+}
+async function delRec(btn){
+  const row=parseInt(btn.dataset.row),type=btn.dataset.type;
+  const id=btn.closest('.hi').id;
+  setSyncDot('syncing');
+  try{
+    const r=await api('deleteRecord',{row,type});
+    if(r.success){
+      D.records=D.records.filter(x=>!(x.row===row&&x.type===type));
+      saveLocal();renderStats();
+      const el=document.getElementById(id);if(el)el.remove();
+      toast('Entry deleted');setSyncDot('ok');
+    } else { toast('Delete failed');setSyncDot('err'); }
+  }catch(e){toast('Delete failed — offline?');setSyncDot('err');}
+}
+
+// ── SAVE INCOME ───────────────────────────────────────────────────────────────
+async function saveIncome(){
+  const date=document.getElementById('i-date').value;if(!date){toast('Select a date');return;}
+  const lbp=raw('i-lbp'),usd=raw('i-usd'),main=raw('i-main');if(!main&&!lbp&&!usd){toast('Enter at least one amount');return;}
+  const rate=parseFloat(document.getElementById('i-rate')?.value)||90000,tLbp=lbp+(usd*rate),tUsd=tLbp/rate;
+  const record={id:Date.now(),type:'income',date,staffArr:getStaff(),main,incomeLbp:lbp,incomeUsd:usd,rate,debit:raw('i-debit'),debitName:document.getElementById('i-dname')?.value||'',method:document.getElementById('i-method')?.value||'Cash',remark:document.getElementById('i-rem')?.value||'',totalLbp:tLbp,totalUsd:tUsd,by:D.users[D.cur].name,ts:new Date().toISOString()};
+  setSyncDot('syncing');
+  try{
+    const r=await api('saveIncome',record);
+    if(r.success){toast('Income saved ✓');setSyncDot('ok');}
+    else{toast('Saved locally (sheet error)');setSyncDot('err');}
+  }catch(e){toast('Saved locally (offline)');setSyncDot('err');}
+  D.records.unshift(record);saveLocal();renderStats();
+  ['i-lbp','i-usd','i-debit','i-rem','i-main'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('i-dname').value='';document.getElementById('i-method').value='Cash';
+  document.querySelectorAll('#staff-chips .chip').forEach(c=>c.classList.remove('on'));
+  calc();
+}
+
+// ── SAVE EXPENSE ──────────────────────────────────────────────────────────────
+async function saveExpense(reEnter){
+  const date=document.getElementById('e-date').value,sup=document.getElementById('e-sup')?.value,amt=raw('e-amt');
+  if(!date){toast('Select a date');return;}if(!sup){toast('Select a supplier');return;}if(!amt){toast('Enter an amount');return;}
+  const cur=document.getElementById('e-cur')?.value||'USD',rate=90000,method=document.getElementById('e-method2')?.value||'Cash';
+  const paidIn=document.getElementById('e-paidin')?.value||'',paid=document.getElementById('e-paidby')?.value||'',cat=document.getElementById('e-cat')?.value||'';
+  const record={id:Date.now(),type:'expense',date,sup,cat,desc:document.getElementById('e-desc')?.value||'',qty:parseFloat(document.getElementById('e-qty')?.value)||1,amt,cur,method,paidIn,paid,rate,amtUsd:cur==='USD'?amt:amt/rate,by:D.users[D.cur].name,ts:new Date().toISOString()};
+  setSyncDot('syncing');
+  try{
+    const r=await api('saveExpense',record);
+    if(r.success){toast(reEnter?'Saved! Enter next item ✓':'Expense saved ✓');setSyncDot('ok');}
+    else{toast('Saved locally (sheet error)');setSyncDot('err');}
+  }catch(e){toast('Saved locally (offline)');setSyncDot('err');}
+  D.records.unshift(record);saveLocal();renderStats();
+  if(reEnter){
+    document.getElementById('e-desc').value='';document.getElementById('e-qty').value='';document.getElementById('e-amt').value='';
+    document.getElementById('e-sup').value=sup;document.getElementById('e-cat').value=cat;
+    document.getElementById('e-cur').value=cur;document.getElementById('e-method2').value=method;
+    document.getElementById('e-paidin').value=paidIn;document.getElementById('e-paidby').value=paid;
+  }else{
+    document.getElementById('e-desc').value='';document.getElementById('e-qty').value='';document.getElementById('e-amt').value='';
+    document.getElementById('e-sup').value='';document.getElementById('e-cat').value='';document.getElementById('e-method2').value='Cash';
+  }
+}
+
+// ── MANAGER ───────────────────────────────────────────────────────────────────
 function renderMgrTabs(){
-  const tabs=getMgrTabs();
-  const bar=document.getElementById('mgr-tab-bar');
-  bar.innerHTML=tabs.map(t=>`<div class="sub-tab ${(!D.mT||D.mT===t.k)?'on':''}" id="mg-${t.k}" onclick="mTab('${t.k}')">${t.lbl}</div>`).join('');
+  const tabs=isMgr()?[{k:'staff',lbl:'Staff'},{k:'lists',lbl:'Pick Lists'},{k:'export',lbl:'Export'}]:[];
+  document.getElementById('mgr-tab-bar').innerHTML=tabs.map(t=>`<div class="sub-tab ${(!D.mT||D.mT===t.k)?'on':''}" id="mg-${t.k}" onclick="mTab('${t.k}')">${t.lbl}</div>`).join('');
   const first=D.mT&&tabs.find(t=>t.k===D.mT)?D.mT:tabs[0]?.k;
   if(first)mTab(first);
 }
-
 function mTab(t){
   D.mT=t;
   document.querySelectorAll('#mgr-tab-bar .sub-tab').forEach(el=>el.classList.toggle('on',el.id==='mg-'+t));
   const el=document.getElementById('mgr-body');
   if(t==='staff'){
-    el.innerHTML=`<div class="sec-title">Staff members</div>`+
-      D.users.map((u,i)=>`<div class="staff-row"><div class="ava ${u.role==='Manager'?'mgr':''}" style="width:40px;height:40px;font-size:15px;">${u.name[0]}</div><div class="sr-inf"><div class="sr-nm">${u.name}</div><div class="sr-rl">${u.role} · PIN: ••••</div></div><div class="sr-acts"><button class="abtn" onclick="openPinM(${i})">PIN</button><button class="abtn" onclick="openPermsM(${i})">Perms</button>${i>0?`<button class="abtn red" onclick="rmStaff(${i})">Remove</button>`:''}</div></div>`).join('')+
-      `<div style="font-size:13px;color:#999;font-weight:500;margin:18px 0 10px;">Add new staff member</div>
-      <div class="add-row"><input id="ns-name" placeholder="Name" style="flex:1;"><input id="ns-pin" placeholder="PIN (4 digits)" maxlength="4" style="width:110px;" inputmode="numeric"><select id="ns-role" style="width:100px;font-size:14px;"><option value="Staff">Staff</option><option value="Manager">Manager</option></select></div>
-      <button class="save-btn" style="margin-top:14px;" onclick="addStaff()">+ Add staff member</button>`;
-  }else if(t==='lists'){
-    renderPickLists(el);
-  }else if(t==='export'){
+    el.innerHTML=`<div class="sec-title">Staff members</div>
+      <div class="info-note" style="font-size:12px;">To add, remove or change PINs permanently, edit the <strong>Staff tab</strong> in your Google Sheet. Changes take effect on next login.</div>`+
+      D.users.map((u,i)=>`<div class="staff-row"><div class="ava ${u.role==='Manager'?'mgr':''}" style="width:40px;height:40px;font-size:15px;">${u.name[0]}</div><div class="sr-inf"><div class="sr-nm">${u.name}</div><div class="sr-rl">${u.role} · PIN: ••••</div></div><div class="sr-acts"><button class="abtn" onclick="openPinM(${i})">PIN</button><button class="abtn" onclick="openPermsM(${i})">Perms</button></div></div>`).join('')+
+      `<button class="save-btn" style="margin-top:16px;background:#f5f5f5;color:#1a1a1a;" onclick="syncStaffNow()">↻ Refresh staff from Sheet</button>`;
+  }else if(t==='lists'){renderPickLists(el);}
+  else{
+    const ni=D.records.filter(r=>r.type==='income').length,ne=D.records.filter(r=>r.type==='expense').length;
+    const yr=new Date().getFullYear();
+    const years=[...new Set(D.records.map(r=>new Date().getFullYear()))].sort((a,b)=>b-a);
+    if(!years.includes(yr))years.unshift(yr);
     el.innerHTML=`<div class="sec-title">Export data</div>
-      <div class="info-note">Select a month (or All) then tap Copy to clipboard. Paste into a .csv file and open in Excel or Google Sheets.</div>
-      <div class="month-filter">
+      <div class="info-note">Select month → copy → paste into a .csv file → open in Excel or Google Sheets.<br><br><strong>Note:</strong> All entries are already live in your Google Sheet — export is just for local CSV backup.</div>
+      <div class="month-sel-row">
         <label>Month:</label>
-        <select class="month-sel" id="exp-month-sel">
-          <option value="all">All months</option>
-          ${MONTHS.map((m,i)=>`<option value="${i+1}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('')}
-        </select>
-        <select class="month-sel" id="exp-year-sel">
-          ${[...new Set(D.records.map(r=>new Date(r.date).getFullYear()))].sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join('')||`<option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>`}
-        </select>
+        <select class="msel" id="exp-month"><option value="all">All months</option>${MONTHS.map((m,i)=>`<option value="${i+1}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('')}</select>
+        <select class="msel" id="exp-year">${[new Date().getFullYear()].map(y=>`<option value="${y}">${y}</option>`).join('')}</select>
       </div>
-      <button class="save-btn green" style="margin-bottom:12px;" onclick="showCSV('income')">Income CSV — ${D.records.filter(r=>r.type==='income').length} records total</button>
-      <button class="save-btn red-bg" onclick="showCSV('expense')">Expenses CSV — ${D.records.filter(r=>r.type==='expense').length} records total</button>`;
+      <button class="save-btn grn" style="margin-bottom:10px;" onclick="showCSV('income')">Income CSV — ${ni} cached</button>
+      <button class="save-btn red" onclick="showCSV('expense')">Expenses CSV — ${ne} cached</button>`;
   }
 }
 
-const PICK_KEYS=[{key:'suppliers',label:'Suppliers'},{key:'categories',label:'Category'},{key:'currency',label:'Currency'},{key:'paidIn',label:'Paid In'},{key:'paymentMethod',label:'Payment Method'},{key:'credit',label:'Debit From'},{key:'paidBy',label:'Paid By'},{key:'legality',label:'Legality'}];
-function renderPickLists(el){el.innerHTML=`<div class="sec-title">Manage pick lists</div><div class="pick-tabs">${PICK_KEYS.map(k=>`<div class="pt ${k.key===D.pickTab?'on':''}" onclick="setPickTab('${k.key}')">${k.label}</div>`).join('')}</div><div id="pick-content"></div>`;renderPickContent();}
-function setPickTab(k){D.pickTab=k;document.querySelectorAll('.pt').forEach(t=>{const f=PICK_KEYS.find(x=>x.key===k);t.classList.toggle('on',!!f&&t.textContent===f.label);});renderPickContent();}
-function renderPickContent(){const el=document.getElementById('pick-content');if(!el)return;const items=D.lists[D.pickTab]||[];el.innerHTML=`<div style="max-height:220px;overflow-y:auto;">`+items.map((s,i)=>`<div class="list-item"><span>${s}</span><button class="mini-r" onclick="rmPickItem('${D.pickTab}',${i})">✕</button></div>`).join('')+`</div><div class="add-row"><input id="pi-new" placeholder="Add new item" style="flex:1;"><button class="abtn" onclick="addPickItem('${D.pickTab}')">+ Add</button></div>`;}
-function addPickItem(key){const v=document.getElementById('pi-new')?.value.trim();if(!v)return;if(!D.lists[key].includes(v)){D.lists[key].push(v);if(['suppliers','categories','paidIn','paidBy','credit'].includes(key))D.lists[key].sort();}saveData();populateDDs();renderPickContent();toast(v+' added');}
-function rmPickItem(key,i){D.lists[key].splice(i,1);saveData();populateDDs();renderPickContent();toast('Removed');}
+async function syncStaffNow(){
+  toast('Refreshing staff...');
+  await syncStaff();
+  renderChips();
+  mTab('staff');
+  toast('Staff updated from Sheet ✓');
+}
+
+const PICK_KEYS=[{key:'suppliers',label:'Suppliers'},{key:'categories',label:'Category'},{key:'currency',label:'Currency'},{key:'paidIn',label:'Paid In'},{key:'paymentMethod',label:'Payment'},{key:'credit',label:'Debit From'},{key:'paidBy',label:'Paid By'},{key:'legality',label:'Legality'}];
+function renderPickLists(el){el.innerHTML=`<div class="sec-title">Manage pick lists</div><div class="pick-tabs">${PICK_KEYS.map(k=>`<div class="pt ${k.key===D.pickTab?'on':''}" onclick="setPT('${k.key}')">${k.label}</div>`).join('')}</div><div id="pick-content"></div>`;renderPC();}
+function setPT(k){D.pickTab=k;document.querySelectorAll('.pt').forEach(t=>{const f=PICK_KEYS.find(x=>x.key===k);t.classList.toggle('on',!!f&&t.textContent===f.label);});renderPC();}
+function renderPC(){const el=document.getElementById('pick-content');if(!el)return;const items=D.lists[D.pickTab]||[];el.innerHTML=`<div style="max-height:220px;overflow-y:auto;">`+items.map((s,i)=>`<div class="list-item"><span>${s}</span><button class="mini-r" onclick="rmPI('${D.pickTab}',${i})">✕</button></div>`).join('')+`</div><div class="add-row"><input id="pi-new" placeholder="Add new item" style="flex:1;"><button class="abtn" onclick="addPI('${D.pickTab}')">+ Add</button></div>`;}
+function addPI(key){const v=document.getElementById('pi-new')?.value.trim();if(!v)return;if(!D.lists[key].includes(v)){D.lists[key].push(v);if(['suppliers','categories','paidIn','paidBy','credit'].includes(key))D.lists[key].sort();}saveLocal();populateDDs();renderPC();toast(v+' added');}
+function rmPI(key,i){D.lists[key].splice(i,1);saveLocal();populateDDs();renderPC();toast('Removed');}
 
 function openPinM(i){D.editIdx=i;document.getElementById('modal-pin-title').textContent='Change PIN — '+D.users[i].name;document.getElementById('modal-pin-val').value='';document.getElementById('modal-pin').classList.add('on');}
-function savePin(){const v=document.getElementById('modal-pin-val').value.trim();if(!/^\d{4}$/.test(v)){toast('PIN must be 4 digits');return;}D.users[D.editIdx].pin=v;saveData();toast('PIN updated');closeModal('modal-pin');mTab('staff');}
+function savePin(){
+  const v=document.getElementById('modal-pin-val').value.trim();
+  if(!/^\d{4}$/.test(v)){toast('PIN must be 4 digits');return;}
+  D.users[D.editIdx].pin=v;saveLocal();
+  toast('PIN changed locally. Update the Staff tab in Google Sheet to make it permanent.');
+  closeModal('modal-pin');mTab('staff');
+}
 function openPermsM(i){D.editIdx=i;const u=D.users[i];document.getElementById('modal-perms-title').textContent='Permissions — '+u.name;document.getElementById('modal-perms-body').innerHTML=ALL_PERMS.map(p=>`<div class="perm-row" onclick="document.getElementById('perm-${p}').click()"><input type="checkbox" id="perm-${p}" ${u.perms.includes(p)?'checked':''}><span>${p.charAt(0).toUpperCase()+p.slice(1)}</span></div>`).join('');document.getElementById('modal-perms').classList.add('on');}
-function savePerms(){const perms=ALL_PERMS.filter(p=>document.getElementById('perm-'+p)?.checked);D.users[D.editIdx].perms=perms;saveData();toast('Permissions updated');closeModal('modal-perms');mTab('staff');}
+function savePerms(){const perms=ALL_PERMS.filter(p=>document.getElementById('perm-'+p)?.checked);D.users[D.editIdx].perms=perms;saveLocal();toast('Permissions updated');closeModal('modal-perms');mTab('staff');}
 function closeModal(id){document.getElementById(id).classList.remove('on');}
-function addStaff(){const name=document.getElementById('ns-name')?.value.trim(),pin=document.getElementById('ns-pin')?.value.trim(),role=document.getElementById('ns-role')?.value||'Staff';if(!name||!pin){toast('Enter name and PIN');return;}if(!/^\d{4}$/.test(pin)){toast('PIN must be 4 digits');return;}D.users.push({name,role,pin,perms:role==='Manager'?[...ALL_PERMS]:['income','expense','history']});saveData();renderStaffChips();populateDDs();toast(name+' added');mTab('staff');}
-function rmStaff(i){const n=D.users[i].name;D.users.splice(i,1);if(D.cur>i)D.cur--;saveData();renderStaffChips();populateDDs();toast(n+' removed');mTab('staff');}
 
-function secTab(t){D.sTab=t;['income','expenses'].forEach(x=>{document.getElementById('t-'+x)?.classList.toggle('on',x===t);document.getElementById('panel-'+x).style.display=x===t?'block':'none';});document.getElementById('sec-tabs').style.display='';}
-function iTab(t){D.iT=t;document.getElementById('it-new').classList.toggle('on',t==='new');document.getElementById('it-hist').classList.toggle('on',t==='hist');document.getElementById('income-new').style.display=t==='new'?'block':'none';const h=document.getElementById('income-hist');h.style.display=t==='hist'?'block':'none';if(t==='hist')renderTypeHist('income','income-hist');}
-function eTab(t){D.eT=t;document.getElementById('et-new').classList.toggle('on',t==='new');document.getElementById('et-hist').classList.toggle('on',t==='hist');document.getElementById('expense-new').style.display=t==='new'?'block':'none';const h=document.getElementById('expense-hist');h.style.display=t==='hist'?'block':'none';if(t==='hist')renderTypeHist('expense','expense-hist');}
-function setHF(f){D.hF=f;['all','income','expense'].forEach(x=>document.getElementById('hf-'+x).classList.toggle('on',x===f));renderHist();}
-function getFiltered(tf){const today=new Date().toISOString().split('T')[0];let r=D.records;if(!isMgr())r=r.filter(x=>x.date===today);if(tf&&tf!=='all')r=r.filter(x=>x.type===tf);return r;}
-function renderHist(){const recs=getFiltered(D.hF);const el=document.getElementById('hist-list');if(!el)return;el.innerHTML=recs.length?recs.slice(0,80).map(r=>hiHtml(r,isMgr())).join(''):'<div class="empty-msg">No entries yet.</div>';}
-function renderTypeHist(type,id){const today=new Date().toISOString().split('T')[0];let r=D.records.filter(x=>x.type===type);if(!isMgr())r=r.filter(x=>x.date===today);document.getElementById(id).innerHTML=r.length?r.slice(0,40).map(x=>hiHtml(x,isMgr())).join(''):'<div class="empty-msg">No entries yet.</div>';}
-function hiHtml(r,canDel){
-  const isI=r.type==='income';
-  const amt=isI?fmtN(Math.round(r.totalLbp||0))+' LBP':fmtN(r.amt||0)+' '+(r.cur||'');
-  const desc=isI?(Array.isArray(r.staffArr)?r.staffArr.filter(x=>x!=='None').join(', '):'')||'Income entry':(r.desc||r.sup||'Expense');
-  return`<div class="hi" id="rec-${r.id}"><div class="hi-top"><span class="hi-desc">${desc}</span><span class="hi-amt" style="color:${isI?'#27500a':'#a32d2d'}">${isI?'+':'-'}${amt}</span></div><div class="hi-meta"><span>${r.date} · ${r.by}</span><span class="bdg ${isI?'bdg-i':'bdg-e'}">${isI?'Income':'Expense'}</span>${canDel?`<button class="del-btn" onclick="delRec(${r.id})">Delete</button>`:''}</div></div>`;
-}
-function delRec(id){D.records=D.records.filter(r=>r.id!==id);saveData();renderStats();const el=document.getElementById('rec-'+id);if(el)el.remove();toast('Entry deleted');}
-
-function fmt(el){const v=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');if(!v){el.value='';return;}const p=v.split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');el.value=p.join('.');}
-function raw(id){return parseFloat((document.getElementById(id)?.value||'0').replace(/,/g,''))||0;}
-function fmtN(n){return(n||0).toLocaleString();}
-function fmtDate(ds){const d=new Date(ds);return String(d.getDate()).padStart(2,'0')+'-'+MONTHS[d.getMonth()]+'-'+d.getFullYear();}
-
-function saveIncome(){
-  const date=document.getElementById('i-date').value;if(!date){toast('Select a date');return;}
-  const lbp=raw('i-lbp'),usd=raw('i-usd'),main=raw('i-main');if(!main&&!lbp&&!usd){toast('Enter at least one amount');return;}
-  const rate=parseFloat(document.getElementById('i-rate')?.value)||90000,tLbp=lbp+(usd*rate),tUsd=tLbp/rate;
-  D.records.unshift({id:Date.now(),type:'income',date,staffArr:getStaff(),main,incomeLbp:lbp,incomeUsd:usd,rate,debit:raw('i-debit'),debitName:document.getElementById('i-dname')?.value||'',method:document.getElementById('i-method')?.value||'Cash',remark:document.getElementById('i-rem')?.value||'',totalLbp:tLbp,totalUsd:tUsd,by:D.users[D.cur].name,ts:new Date().toISOString()});
-  saveData();renderStats();
-  ['i-lbp','i-usd','i-debit','i-rem','i-main'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('i-dname').value='';document.getElementById('i-method').value='Cash';
-  document.querySelectorAll('#staff-chips .chip').forEach(c=>c.classList.remove('on'));
-  calc();toast('Income saved! ✓');
-}
-
-function saveExpense(reEnter){
-  const date=document.getElementById('e-date').value,sup=document.getElementById('e-sup')?.value,amt=raw('e-amt');
-  if(!date){toast('Select a date');return;}if(!sup){toast('Select a supplier');return;}if(!amt){toast('Enter an amount');return;}
-  const cur=document.getElementById('e-cur')?.value||'USD',rate=90000;
-  const method=document.getElementById('e-method2')?.value||'Cash';
-  const paidIn=document.getElementById('e-paidin')?.value||'';
-  const paid=document.getElementById('e-paidby')?.value||'';
-  const cat=document.getElementById('e-cat')?.value||'';
-  D.records.unshift({id:Date.now(),type:'expense',date,sup,cat,desc:document.getElementById('e-desc')?.value||'',qty:parseFloat(document.getElementById('e-qty')?.value)||1,amt,cur,method,paidIn,paid,rate,amtUsd:cur==='USD'?amt:amt/rate,by:D.users[D.cur].name,ts:new Date().toISOString()});
-  saveData();renderStats();
-  if(reEnter){
-    // Save & re-enter: keep date, supplier, category, currency, method, paidIn, paidBy — reset desc, qty, amount
-    document.getElementById('e-desc').value='';
-    document.getElementById('e-qty').value='';
-    document.getElementById('e-amt').value='';
-    // restore kept values (they haven't changed, just confirm)
-    document.getElementById('e-sup').value=sup;
-    document.getElementById('e-cat').value=cat;
-    document.getElementById('e-cur').value=cur;
-    document.getElementById('e-method2').value=method;
-    document.getElementById('e-paidin').value=paidIn;
-    document.getElementById('e-paidby').value=paid;
-    toast('Saved! Enter next item ✓');
-    document.getElementById('e-desc').focus();
-  }else{
-    document.getElementById('e-desc').value='';document.getElementById('e-qty').value='';document.getElementById('e-amt').value='';
-    document.getElementById('e-sup').value='';document.getElementById('e-cat').value='';document.getElementById('e-method2').value='Cash';
-    toast('Expense saved! ✓');
-  }
-}
-
+// ── CSV EXPORT (local cache) ──────────────────────────────────────────────────
 function buildCSV(type){
-  const monthSel=document.getElementById('exp-month-sel')?.value||'all';
-  const yearSel=parseInt(document.getElementById('exp-year-sel')?.value)||new Date().getFullYear();
+  const ms=document.getElementById('exp-month')?.value||'all';
+  const yr=parseInt(document.getElementById('exp-year')?.value)||new Date().getFullYear();
   let recs=D.records.filter(r=>r.type===type);
-  if(monthSel!=='all'){
-    const m=parseInt(monthSel);
-    recs=recs.filter(r=>{const d=new Date(r.date);return d.getMonth()+1===m&&d.getFullYear()===yearSel;});
-  }
+  if(ms!=='all'){const m=parseInt(ms);recs=recs.filter(r=>{const d=new Date(r.date+'T12:00:00');return d.getMonth()+1===m&&d.getFullYear()===yr;});}
   if(!recs.length)return null;
   let csv='';
   if(type==='income'){
     csv='Date,Day,Month,Year,Staff 1,Staff 2,Staff 3,Staff 4,,Main reading,Income Lbp,Income usd,Ex Rate,Total Income Lbp,Total income Usd,Debit amount,Debit name,Remark,Payment Method\n';
-    recs.forEach(r=>{const d=new Date(r.date);const sa=Array.isArray(r.staffArr)?r.staffArr:[];csv+=`"${fmtDate(r.date)}",${d.getDate()},${d.getMonth()+1},${d.getFullYear()},"${sa[0]||''}","${sa[1]||''}","${sa[2]||''}","${sa[3]||''}","",${r.main||0},${r.incomeLbp||0},${r.incomeUsd||0},${r.rate||90000},${Math.round(r.totalLbp||0)},${(r.totalUsd||0).toFixed(4)},${r.debit||0},"${r.debitName||''}","${r.remark||''}","${r.method||'Cash'}"\n`;});
+    recs.forEach(r=>{const d=new Date((r.date||'')+'T12:00:00'),sa=Array.isArray(r.staffArr)?r.staffArr:[];csv+=`"${r.date}",${d.getDate()},${d.getMonth()+1},${d.getFullYear()},"${sa[0]||''}","${sa[1]||''}","${sa[2]||''}","${sa[3]||''}","",${r.main||0},${r.incomeLbp||0},${r.incomeUsd||0},${r.rate||90000},${Math.round(r.totalLbp||0)},${(parseFloat(r.totalUsd)||0).toFixed(4)},${r.debit||0},"${r.debitName||''}","${r.remark||''}","${r.method||'Cash'}"\n`;});
   }else{
     csv='Date,Day,Month,Year,QTY,Description,Supplier,Category,Amount,Currency,Month#,Paid in,Paid by,Rate,Payment Method,Total USD\n';
-    recs.forEach(r=>{const d=new Date(r.date),rt=r.rate||90000,tUsd=r.cur==='USD'?r.amt:r.amt/rt;csv+=`"${fmtDate(r.date)}",${d.getDate()},${d.getMonth()+1},${d.getFullYear()},${r.qty||1},"${r.desc||''}","${r.sup||''}","${r.cat||''}",${r.amt||0},"${r.cur||'USD'}",${d.getMonth()+1},"${r.paidIn||''}","${r.paid||''}",${rt},"${r.method||'Cash'}",${tUsd.toFixed(4)}\n`;});
+    recs.forEach(r=>{const d=new Date((r.date||'')+'T12:00:00'),rt=r.rate||90000,tU=r.cur==='USD'?r.amt:r.amt/rt;csv+=`"${r.date}",${d.getDate()},${d.getMonth()+1},${d.getFullYear()},${r.qty||1},"${r.desc||''}","${r.sup||''}","${r.cat||''}",${r.amt||0},"${r.cur||'USD'}",${d.getMonth()+1},"${r.paidIn||''}","${r.paid||''}",${rt},"${r.method||'Cash'}",${(parseFloat(tU)||0).toFixed(4)}\n`;});
   }
   return csv;
 }
-const CSV_REFS={income:'A=Date  B=Day  C=Month#  D=Year\nE-H=Staff 1-4  I=blank  J=Main reading\nK=Income LBP  L=Income USD  M=Rate\nN=Total LBP  O=Total USD\nP=Debit amt  Q=Debit name  R=Remark  S=Payment',expense:'A=Date  B=Day  C=Month#  D=Year\nE=QTY  F=Description  G=Supplier  H=Category\nI=Amount  J=Currency  K=Month#\nL=Paid in  M=Paid by  N=Rate\nO=Payment method  P=Total USD'};
-function showCSV(type){
-  const monthSel=document.getElementById('exp-month-sel')?.value||'all';
-  const yearSel=document.getElementById('exp-year-sel')?.value||new Date().getFullYear();
-  const csv=buildCSV(type);
-  if(!csv){const label=monthSel==='all'?'any period':MONTHS[parseInt(monthSel)-1]+' '+yearSel;toast('No '+type+' records for '+label);return;}
-  const count=csv.split('\n').length-2;
-  const period=monthSel==='all'?'All months':MONTHS[parseInt(monthSel)-1]+' '+yearSel;
-  document.getElementById('csv-title').textContent=(type==='income'?'Income':'Expenses')+' — '+period+' ('+count+' rows)';
-  document.getElementById('col-ref').textContent=CSV_REFS[type];
-  document.getElementById('csv-text').value=csv;
-  document.getElementById('modal-csv').classList.add('on');
-}
+const CSV_REFS={income:'A=Date  B=Day  C=Month#  D=Year\nE-H=Staff 1-4  I=blank  J=Main reading\nK=Income LBP  L=Income USD  M=Rate\nN=Total LBP  O=Total USD\nP=Debit amt  Q=Debit name  R=Remark  S=Payment',expense:'A=Date  B=Day  C=Month#  D=Year\nE=QTY  F=Desc  G=Supplier  H=Category\nI=Amount  J=Currency  K=Month#\nL=Paid in  M=Paid by  N=Rate  O=Payment  P=Total USD'};
+function showCSV(type){const csv=buildCSV(type);if(!csv){toast('No records for that period');return;}const ms=document.getElementById('exp-month')?.value||'all';const yr=document.getElementById('exp-year')?.value||new Date().getFullYear();const count=csv.split('\n').length-2;const period=ms==='all'?'All months':MONTHS[parseInt(ms)-1]+' '+yr;document.getElementById('csv-title').textContent=(type==='income'?'Income':'Expenses')+' — '+period+' ('+count+' rows)';document.getElementById('col-ref').textContent=CSV_REFS[type];document.getElementById('csv-text').value=csv;document.getElementById('modal-csv').classList.add('on');}
 function copyCSV(){const ta=document.getElementById('csv-text');ta.select();try{if(navigator.clipboard){navigator.clipboard.writeText(ta.value).then(()=>toast('Copied!')).catch(()=>{document.execCommand('copy');toast('Copied!');});}else{document.execCommand('copy');toast('Copied!');}}catch(e){toast('Select all and copy manually');}}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fmt(el){const v=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');if(!v){el.value='';return;}const p=v.split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');el.value=p.join('.');}
+function raw(id){return parseFloat((document.getElementById(id)?.value||'0').replace(/,/g,''))||0;}
+function fmtN(n){return(n||0).toLocaleString();}
+function fmtDate(d){return String(d.getDate()).padStart(2,'0')+'-'+MONTHS[d.getMonth()]+'-'+d.getFullYear();}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
-loadData();initLogin();
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+loadLocal();
+syncStaff();
 </script>
 </body>
 </html>
