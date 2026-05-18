@@ -437,7 +437,7 @@ function loadLocal(){const u=sl('cs8_usr');if(u)D.users=u;const r=sl('cs8_rec');
 function saveLocal(){sl('cs8_usr',D.users);sl('cs8_rec',D.records);sl('cs8_lists',D.lists);}
 
 async function api(action,data={}){
-  const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action,...data})});
+  const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action,key:APP_KEY,...data})});
   return res.json();
 }
 
