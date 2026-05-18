@@ -393,6 +393,7 @@ let D = {
   photoData:{ income:null, expense:null } // {base64, mimeType, fileName}
 };
 let currentPhotoTarget = null;
+let isSaving = false; // prevents double-save
 
 function sl(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
 function loadLocal(){const u=sl('cs8_usr');if(u)D.users=u;const r=sl('cs8_rec');if(r)D.records=r;const l=sl('cs8_lists');if(l)D.lists=l;}
@@ -598,7 +599,7 @@ function removePhoto(type){
   wrap.style.display='none';section.classList.remove('has-photo');
 }
 
-async function uploadPhotoIfAny(type,ref,date){
+async function uploadPhotoIfAny(type,ref,date,row){
   const pd=D.photoData[type];if(!pd)return null;
   const ext=pd.mimeType.split('/')[1]||'jpg';
   const fileName=ref+'.'+ext;
@@ -606,8 +607,18 @@ async function uploadPhotoIfAny(type,ref,date){
   progressEl.textContent='Uploading image...';progressEl.className='upload-progress';
   try{
     const r=await api('uploadImage',{imageBase64:pd.base64,mimeType:pd.mimeType,fileName,date,type,ref});
-    if(r.success){progressEl.textContent='Image uploaded ✓';progressEl.className='upload-progress ok';return fileName;}
-    else{progressEl.textContent='Image upload failed: '+(r.error||'');progressEl.className='upload-progress err';return null;}
+    if(r.success){
+      progressEl.textContent='Image uploaded ✓ — '+r.path;progressEl.className='upload-progress ok';
+      // Now update column Z with a clickable hyperlink to the Drive file
+      if(row && r.url){
+        try{await api('updateRef',{type,row,ref,url:r.url});}
+        catch(e){/* hyperlink update failed silently — ref text already in sheet */}
+      }
+      return r.url||fileName;
+    }else{
+      progressEl.textContent='Image upload failed: '+(r.error||'');progressEl.className='upload-progress err';
+      return null;
+    }
   }catch(e){progressEl.textContent='Image upload failed (offline?)';progressEl.className='upload-progress err';return null;}
 }
 
@@ -687,12 +698,14 @@ function extractDateStr(d){
 
 // ── SAVE INCOME ───────────────────────────────────────────────────────────────
 async function saveIncome(isEdit){
+  if(isSaving)return;
   if(!validateIncome())return;
+  isSaving=true;
   const date=document.getElementById('i-date').value;
   const lbp=raw('i-lbp'),usd=raw('i-usd'),main=raw('i-main');
   const rate=parseFloat(document.getElementById('i-rate')?.value)||90000;
   const tLbp=lbp+(usd*rate),tUsd=tLbp/rate;
-  const btn=isEdit?null:document.getElementById('i-save-btn');
+  const btn=document.getElementById(isEdit?'i-update-btn':'i-save-btn');
   if(btn){btn.disabled=true;btn.textContent='Saving...';}
   setSyncDot('syncing');
 
@@ -709,9 +722,11 @@ async function saveIncome(isEdit){
     else{r=await api('saveIncome',record);}
     if(r.success||r.row){
       if(r.row)record.row=r.row;
+      // For edits, row comes from editRecord since updateRecord doesn't return it
+      const sheetRow=record.row||D.editRecord?.row;
       toast(isEdit?'Entry updated ✓':'Income saved ✓');setSyncDot('ok');
       // Upload photo if any
-      if(D.photoData.income){await uploadPhotoIfAny('income',ref,date);}
+      if(D.photoData.income){await uploadPhotoIfAny('income',ref,date,sheetRow);}
     }else{toast('Saved locally (sheet error)');setSyncDot('err');}
   }catch(e){toast('Saved locally (offline)');setSyncDot('err');}
 
@@ -719,16 +734,23 @@ async function saveIncome(isEdit){
   else{D.records.unshift(record);}
   saveLocal();renderStats();
   resetIncomeForm();
-  if(btn){btn.disabled=false;btn.textContent='Save income entry';}
+  if(btn){btn.disabled=false;btn.textContent=isEdit?'Update entry':'Save income entry';}
   if(isEdit){cancelEdit();}
   D.photoData.income=null;
+  isSaving=false;
 }
 
 // ── SAVE EXPENSE ──────────────────────────────────────────────────────────────
 async function saveExpense(mode){
+  if(isSaving)return;
   // mode: true=reEnter, false=normal, 'edit'=update
   const isEdit=mode==='edit';
   if(!validateExpense())return;
+  isSaving=true;
+  // Disable all expense buttons immediately
+  document.querySelectorAll('#e-save-btns button, #e-edit-btns button').forEach(b=>{b.disabled=true;});
+  const activeBtn = isEdit ? document.querySelector('#e-edit-btns .save-btn:last-child') : document.querySelector('#e-save-btns .save-btn:last-child');
+  if(activeBtn) activeBtn.textContent='Saving...';
   const date=document.getElementById('e-date').value;
   const sup=document.getElementById('e-sup')?.value,cat=document.getElementById('e-cat')?.value;
   const amt=raw('e-amt'),cur=document.getElementById('e-cur')?.value||'USD';
@@ -750,8 +772,10 @@ async function saveExpense(mode){
     else{r=await api('saveExpense',record);}
     if(r.success||r.row){
       if(r.row)record.row=r.row;
+      // For edits, row comes from editRecord since updateRecord doesn't return it
+      const sheetRow=record.row||D.editRecord?.row;
       toast(isEdit?'Entry updated ✓':mode===true?'Saved! Enter next item ✓':'Expense saved ✓');setSyncDot('ok');
-      if(D.photoData.expense){await uploadPhotoIfAny('expense',ref,date);}
+      if(D.photoData.expense){await uploadPhotoIfAny('expense',ref,date,sheetRow);}
     }else{toast('Saved locally (sheet error)');setSyncDot('err');}
   }catch(e){toast('Saved locally (offline)');setSyncDot('err');}
 
@@ -769,6 +793,11 @@ async function saveExpense(mode){
     document.getElementById('e-paidin').value=paidIn;document.getElementById('e-paidby').value=paid;
     removePhoto('expense');
   }else{resetExpenseForm();}
+  // Re-enable buttons
+  document.querySelectorAll('#e-save-btns button, #e-edit-btns button').forEach(b=>{b.disabled=false;});
+  const rb=document.querySelector('#e-save-btns .save-btn:last-child');if(rb)rb.textContent='Save entry';
+  const rb2=document.querySelector('#e-edit-btns .save-btn:last-child');if(rb2)rb2.textContent='Update entry';
+  isSaving=false;
 }
 
 // ── FORM RESETS ───────────────────────────────────────────────────────────────
