@@ -261,17 +261,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <span class="pay-calc" id="i-cash-display">—</span>
           <span class="pay-sub">auto calculated</span>
         </div>
-        <div class="pay-extra-wrap" id="pay-extra-wrap" style="display:none;">
-          <div class="pay-extra-row">
-            <div class="sw" style="flex:1;"><select class="fsel" id="i-pay-method" onchange="calc()"></select></div>
-            <div class="debit-amt-wrap" style="width:110px;">
-              <input class="fi" id="i-pay-amount" placeholder="0" inputmode="decimal" oninput="fmt(this);calc()">
-              <span class="usd-label" id="i-pay-cur-label">USD</span>
-            </div>
-            <div class="sw" style="width:70px;"><select class="fsel" id="i-pay-cur" style="width:70px;" onchange="updatePayCurLabel();calc()"><option>USD</option><option>LBP</option></select></div>
-            <button type="button" class="debit-remove" onclick="removeExtraPayment()" title="Remove">✕</button>
-          </div>
-        </div>
+        <div id="extra-pay-rows"></div>
         <button type="button" class="add-debit-btn" id="add-pay-btn" onclick="addExtraPayment()">+ Add other payment method</button>
       </div>
       <div class="totals-box">
@@ -620,44 +610,63 @@ function getDebits(){
 function getTotalDebit(){return getDebits().reduce((s,d)=>s+d.amount,0);}
 
 // ── EXTRA PAYMENT METHOD HELPERS ─────────────────────────────────────────────
-function addExtraPayment(){
-  document.getElementById('pay-extra-wrap').style.display='block';
-  document.getElementById('add-pay-btn').style.display='none';
-  // populate method dropdown from lists
-  const sel=document.getElementById('i-pay-method');
-  if(sel){sel.innerHTML=D.lists.paymentMethod.filter(m=>m!=='Cash').map(m=>`<option>${m}</option>`).join('');}
+function getPayMethods(){
+  // Read from paymentMethod picklist, exclude Cash
+  return D.lists.paymentMethod.filter(m=>m.toLowerCase()!=='cash');
+}
+function addExtraPayment(method='',amount='',cur='USD'){
+  const container=document.getElementById('extra-pay-rows');
+  const idx=Date.now();
+  const methods=getPayMethods();
+  const opts=methods.map(m=>`<option ${m===method?'selected':''}>${m}</option>`).join('');
+  const row=document.createElement('div');
+  row.className='pay-extra-row';row.dataset.idx=idx;
+  row.innerHTML=`
+    <div class="sw" style="flex:1;min-width:90px;">
+      <select class="fsel" onchange="calc()">${opts||'<option>Card</option>'}</select>
+    </div>
+    <div class="debit-amt-wrap" style="flex:1;">
+      <input class="fi" type="text" inputmode="decimal" placeholder="0" value="${amount}" oninput="fmt(this);calc()">
+      <span class="usd-label pay-cur-lbl">${cur}</span>
+    </div>
+    <div class="sw" style="width:65px;">
+      <select class="fsel" style="width:65px;" onchange="this.closest('.pay-extra-row').querySelector('.pay-cur-lbl').textContent=this.value;calc()">
+        <option ${cur==='USD'?'selected':''}>USD</option>
+        <option ${cur==='LBP'?'selected':''}>LBP</option>
+      </select>
+    </div>
+    <button type="button" class="debit-remove" onclick="this.closest('.pay-extra-row').remove();calc();" title="Remove">✕</button>`;
+  container.appendChild(row);
   calc();
 }
 function removeExtraPayment(){
-  document.getElementById('pay-extra-wrap').style.display='none';
-  document.getElementById('add-pay-btn').style.display='inline-flex';
-  const a=document.getElementById('i-pay-amount');if(a)a.value='';
+  // clear all extra pay rows
+  document.getElementById('extra-pay-rows').innerHTML='';
   calc();
 }
-function updatePayCurLabel(){
-  const cur=document.getElementById('i-pay-cur')?.value||'USD';
-  const lbl=document.getElementById('i-pay-cur-label');
-  if(lbl)lbl.textContent=cur;
+function getExtraPayments(){
+  const rows=document.querySelectorAll('#extra-pay-rows .pay-extra-row');
+  const payments=[];
+  rows.forEach(row=>{
+    const method=row.querySelector('select')?.value||'';
+    const amt=parseFloat((row.querySelector('input')?.value||'0').replace(/,/g,''))||0;
+    const cur=row.querySelectorAll('select')[1]?.value||'USD';
+    if(amt>0)payments.push({method,amount:amt,cur});
+  });
+  return payments;
 }
-function getExtraPayment(){
-  const wrap=document.getElementById('pay-extra-wrap');
-  if(!wrap||wrap.style.display==='none')return null;
-  const method=document.getElementById('i-pay-method')?.value||'';
-  const amount=parseFloat((document.getElementById('i-pay-amount')?.value||'0').replace(/,/g,''))||0;
-  const cur=document.getElementById('i-pay-cur')?.value||'USD';
-  if(!amount)return null;
-  return{method,amount,cur};
+function getTotalExtraPayUsd(rate){
+  return getExtraPayments().reduce((s,p)=>s+(p.cur==='USD'?p.amount:p.amount/rate),0);
 }
-function getExtraPayUsd(rate){
-  const ep=getExtraPayment();if(!ep)return 0;
-  return ep.cur==='USD'?ep.amount:ep.amount/rate;
-}
+// kept for backward compat
+function getExtraPayment(){const ep=getExtraPayments();return ep.length?ep[0]:null;}
+function getExtraPayUsd(rate){return getTotalExtraPayUsd(rate);}
 
 // ── CALC ──────────────────────────────────────────────────────────────────────
 function calc(){
   const lbp=raw('i-lbp'),usd=raw('i-usd'),rate=parseFloat(document.getElementById('i-rate')?.value)||90000,main=raw('i-main');
   const totalDebitUsd=getTotalDebit();
-  const extraPayUsd=getExtraPayUsd(rate);
+  const extraPayUsd=getTotalExtraPayUsd(rate);
   // Total income USD = cash USD + debit + extra payment
   const totalUsdAll=usd+totalDebitUsd+extraPayUsd;
   const tLbp=lbp+(totalUsdAll*rate);
@@ -667,8 +676,9 @@ function calc(){
   if(tl)tl.textContent=tLbp>0?fmtN(Math.round(tLbp))+' LBP':'—';
   if(tu)tu.textContent=tUsd>0?'$'+tUsd.toFixed(2):'—';
 
-  // Cash = Total LBP − main reading, converted to USD (what's left after subtracting machine reading)
-  const cashLbp=tLbp-main;
+  // Cash = Income LBP + (Income USD × rate) — pure cash received (LBP notes + USD notes)
+  // Debit and extra payments are separate, so cash = what staff physically received in notes
+  const cashLbp=lbp+(usd*rate);
   const cashUsd=cashLbp/rate;
   const cd=document.getElementById('i-cash-display');
   if(cd)cd.textContent=cashLbp>0?'$'+cashUsd.toFixed(2)+' ('+fmtN(Math.round(cashLbp))+' LBP)':'—';
@@ -765,14 +775,13 @@ function openEditIncome(r){
   document.getElementById('debit-rows').innerHTML='';
   if(r.debits&&r.debits.length){r.debits.forEach(d=>addDebitRow(d.name,d.amount));}
   else if(parseFloat(r.debit)>0){addDebitRow(r.debitName||'',parseFloat(r.debit));}
-  // Restore extra payment if present
-  if(r.extraPayMethod&&r.extraPayAmount){
-    addExtraPayment();
-    document.getElementById('i-pay-method').value=r.extraPayMethod;
-    setVal('i-pay-amount',r.extraPayAmount);
-    document.getElementById('i-pay-cur').value=r.extraPayCur||'USD';
-    updatePayCurLabel();
-  } else { removeExtraPayment(); }
+  // Restore extra payments if present
+  document.getElementById('extra-pay-rows').innerHTML='';
+  if(r.extraPayments&&r.extraPayments.length){
+    r.extraPayments.forEach(ep=>addExtraPayment(ep.method,ep.amount,ep.cur));
+  } else if(r.extraPayMethod&&r.extraPayAmount){
+    addExtraPayment(r.extraPayMethod,r.extraPayAmount,r.extraPayCur||'USD');
+  }
   // Remark: stored as "debit detail | manual remark" — show only manual part in edit
   const storedRemark=r.remark||'';
   const manualOnly=storedRemark.includes(' | ')?storedRemark.split(' | ').slice(1).join(' | '):
@@ -854,8 +863,9 @@ async function saveIncome(isEdit){
 
   const debits=getDebits();
   const totalDebitUsd=debits.reduce((s,d)=>s+d.amount,0);
-  const extraPay=getExtraPayment();
-  const extraPayUsd=getExtraPayUsd(rate);
+  const extraPays=getExtraPayments();
+  const extraPay=extraPays[0]||null; // first one for backward compat
+  const extraPayUsd=getTotalExtraPayUsd(rate);
   const incomeUsdWithAll=usd+totalDebitUsd+extraPayUsd; // col L = all USD income
   const debitNames=debits.map(d=>d.name).join(', ');
   const debitRemark=debits.length?debits.map(d=>d.name+': $'+fmtN(d.amount)).join(', '):'';
@@ -864,7 +874,7 @@ async function saveIncome(isEdit){
   const record={id:D.editRecord?.id||Date.now(),type:'income',date,staffArr:getStaff(),main,
     incomeLbp:lbp,incomeUsd:incomeUsdWithAll,incomeUsdRaw:usd,rate,
     debit:totalDebitUsd,debitName:debitNames,debits,
-    extraPayMethod:extraPay?.method||'',extraPayAmount:extraPay?.amount||0,extraPayCur:extraPay?.cur||'',
+    extraPayMethod:extraPay?.method||'',extraPayAmount:extraPay?.amount||0,extraPayCur:extraPay?.cur||'',extraPayments:extraPays,
     remark:fullRemark,totalLbp:tLbp,totalUsd:tUsd,ref,
     by:D.users[D.cur].name,ts:new Date().toISOString(),row:D.editRecord?.row};
 
