@@ -44,12 +44,6 @@
 
 ---
 
-## Default Login
-- **Jose** (Manager) — PIN: 1234
-- **Dani** (Staff) — PIN: 0000  
-- **Nathan** (Staff) — PIN: 0000
-
-Change PINs immediately after first login via Manager → Staff → PIN button.
 
 ## Works offline
 Once installed, the app works with no internet connection. Data stays on each device.
