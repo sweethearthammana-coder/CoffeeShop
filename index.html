@@ -162,6 +162,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .install-banner.show{display:block;}
 .ib-title{font-size:15px;font-weight:700;color:#27500a;margin-bottom:6px;}
 .ib-steps{font-size:13px;color:#3b6d11;line-height:1.8;}
+/* multi-debit rows */
+.debit-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:12px;}
+.debit-row .fi{flex:1;}
+.debit-amt-wrap{position:relative;flex:1;}
+.debit-amt-wrap .usd-label{position:absolute;right:0;bottom:9px;font-size:13px;color:#999;pointer-events:none;}
+.debit-row .fsel{width:110px;flex-shrink:0;}
+.debit-remove{width:28px;height:28px;border-radius:50%;border:1px solid #e24b4a;background:transparent;color:#a32d2d;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;margin-bottom:2px;}
+.add-debit-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px dashed #999;border-radius:20px;font-size:13px;color:#666;cursor:pointer;background:transparent;margin-top:4px;}
+.add-debit-btn:hover{border-color:#1a1a1a;color:#1a1a1a;}
+.debit-total{font-size:13px;color:#666;margin-top:6px;min-height:18px;}
 /* upload progress */
 .upload-progress{font-size:13px;color:#666;margin-top:8px;min-height:18px;}
 .upload-progress.ok{color:#27500a;}
@@ -230,9 +240,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="field"><label class="flbl" id="lbl-i-usd">Income USD *</label><input class="fi" id="i-usd" placeholder="0" inputmode="decimal" oninput="fmt(this);calc()"></div>
       </div>
       <div class="field"><label class="flbl">Exchange rate (LBP per USD)</label><input class="fi" id="i-rate" type="number" inputmode="numeric" placeholder="90000" oninput="calc()"></div>
-      <div class="f2">
-        <div class="field"><label class="flbl">Debit amount</label><input class="fi" id="i-debit" placeholder="0" inputmode="decimal" oninput="fmt(this);calc()"></div>
-        <div class="field"><label class="flbl">Debit from</label><div class="sw"><select class="fsel" id="i-dname"></select></div></div>
+      <div class="field">
+        <label class="flbl">Debit entries <span style="font-size:11px;color:#999;">(USD)</span></label>
+        <div id="debit-rows"></div>
+        <button type="button" class="add-debit-btn" onclick="addDebitRow()">+ Add debit</button>
+        <div class="debit-total" id="debit-total"></div>
       </div>
       <div class="f2">
         <div class="field"><label class="flbl">Payment method</label><div class="sw"><select class="fsel" id="i-method"><option>Cash</option><option>Card</option></select></div></div>
@@ -551,16 +563,59 @@ function validateExpense(){
   return ok;
 }
 
+// ── MULTI-DEBIT HELPERS ──────────────────────────────────────────────────────
+function addDebitRow(name='', amount=''){
+  const container=document.getElementById('debit-rows');
+  const idx=Date.now();
+  const opts=D.lists.credit.map(n=>`<option ${n===name?'selected':''}>${n}</option>`).join('');
+  const row=document.createElement('div');
+  row.className='debit-row';row.dataset.idx=idx;
+  row.innerHTML=`
+    <div class="sw" style="width:120px;flex-shrink:0;"><select class="fsel" style="width:120px;" onchange="calc()">${opts}</select></div>
+    <div class="debit-amt-wrap">
+      <input class="fi" type="text" inputmode="decimal" placeholder="0" value="${amount}" oninput="fmt(this);calc()">
+      <span class="usd-label">USD</span>
+    </div>
+    <button type="button" class="debit-remove" onclick="removeDebitRow(this)" title="Remove">✕</button>`;
+  container.appendChild(row);
+  calc();
+}
+function removeDebitRow(btn){btn.closest('.debit-row').remove();calc();}
+function getDebits(){
+  // Returns array of {name, amount}
+  const rows=document.querySelectorAll('#debit-rows .debit-row');
+  const debits=[];
+  rows.forEach(row=>{
+    const name=row.querySelector('select')?.value||'';
+    const amt=parseFloat((row.querySelector('input')?.value||'0').replace(/,/g,''))||0;
+    if(amt>0)debits.push({name,amount:amt});
+  });
+  return debits;
+}
+function getTotalDebit(){return getDebits().reduce((s,d)=>s+d.amount,0);}
+
 // ── CALC ──────────────────────────────────────────────────────────────────────
 function calc(){
   const lbp=raw('i-lbp'),usd=raw('i-usd'),rate=parseFloat(document.getElementById('i-rate')?.value)||90000,main=raw('i-main');
-  const tLbp=lbp+(usd*rate),tUsd=tLbp/rate;
+  const totalDebitUsd=getTotalDebit();
+  // Debit is INCLUDED in total income (it's part of the day's takings, just owed by individuals)
+  const totalUsdWithDebit=usd+totalDebitUsd;
+  const tLbp=lbp+(totalUsdWithDebit*rate);
+  const tUsd=tLbp/rate;
   const tl=document.getElementById('tot-lbp'),tu=document.getElementById('tot-usd');
   if(tl)tl.textContent=tLbp>0?fmtN(Math.round(tLbp))+' LBP':'—';
   if(tu)tu.textContent=tUsd>0?'$'+tUsd.toFixed(2):'—';
+  // Update debit total display
+  const dt=document.getElementById('debit-total');
+  if(dt)dt.textContent=totalDebitUsd>0?'Total debit: $'+fmtN(totalDebitUsd):'';
   const tb=document.getElementById('tip-box');
-  if(tb&&isMgr()){tb.style.display='block';const tip=tUsd-(main/rate);const neg=tip<0;tb.className='tip-box '+(neg?'neg':'pos');document.getElementById('tip-val').textContent=(neg?'-$':'$')+Math.abs(tip).toFixed(2);}
-  else if(tb)tb.style.display='none';
+  if(tb&&isMgr()){
+    tb.style.display='block';
+    // Tips = Total USD (including debit) minus main reading — debit is part of the income
+    const tip=tUsd-(main/rate);
+    const neg=tip<0;tb.className='tip-box '+(neg?'neg':'pos');
+    document.getElementById('tip-val').textContent=(neg?'-$':'$')+Math.abs(tip).toFixed(2);
+  }else if(tb)tb.style.display='none';
 }
 
 // ── PHOTO HANDLING ────────────────────────────────────────────────────────────
@@ -634,12 +689,20 @@ function openEditIncome(r){
   document.querySelectorAll('#staff-chips .chip').forEach(c=>c.classList.remove('on'));
   const sa=Array.isArray(r.staffArr)?r.staffArr:[];
   sa.forEach(name=>{document.querySelectorAll('#staff-chips .chip').forEach(c=>{if(c.textContent===name)c.classList.add('on');});});
-  setVal('i-main',r.main);setVal('i-lbp',r.incomeLbp);setVal('i-usd',r.incomeUsd);
+  setVal('i-main',r.main);setVal('i-lbp',r.incomeLbp);
+  // incomeUsd stored in sheet includes debit — restore raw USD only
+  setVal('i-usd',r.incomeUsdRaw!==undefined?r.incomeUsdRaw:r.incomeUsd);
   document.getElementById('i-rate').value=r.rate||90000;
-  setVal('i-debit',r.debit);
-  document.getElementById('i-dname').value=r.debitName||'';
+  // Restore debit rows
+  document.getElementById('debit-rows').innerHTML='';
+  if(r.debits&&r.debits.length){r.debits.forEach(d=>addDebitRow(d.name,d.amount));}
+  else if(parseFloat(r.debit)>0){addDebitRow(r.debitName||'',parseFloat(r.debit));}
   document.getElementById('i-method').value=r.method||'Cash';
-  document.getElementById('i-rem').value=r.remark||'';
+  // Remark: stored as "debit detail | manual remark" — show only manual part in edit
+  const storedRemark=r.remark||'';
+  const manualOnly=storedRemark.includes(' | ')?storedRemark.split(' | ').slice(1).join(' | '):
+                   (r.debits&&r.debits.length?'':storedRemark);
+  document.getElementById('i-rem').value=manualOnly;
   calc();
   // Show ref badge
   if(r.ref){document.getElementById('i-ref-badge').textContent=r.ref;document.getElementById('i-ref-wrap').style.display='block';}
@@ -714,7 +777,19 @@ async function saveIncome(isEdit){
     try{const rr=await api('getNextRef',{type:'income'});ref=rr.ref||'INC00001';}catch(e){ref='INC'+(Date.now()%100000);}
   }
 
-  const record={id:D.editRecord?.id||Date.now(),type:'income',date,staffArr:getStaff(),main,incomeLbp:lbp,incomeUsd:usd,rate,debit:raw('i-debit'),debitName:document.getElementById('i-dname')?.value||'',method:document.getElementById('i-method')?.value||'Cash',remark:document.getElementById('i-rem')?.value||'',totalLbp:tLbp,totalUsd:tUsd,ref,by:D.users[D.cur].name,ts:new Date().toISOString(),row:D.editRecord?.row};
+  const debits=getDebits();
+  const totalDebitUsd=debits.reduce((s,d)=>s+d.amount,0);
+  const incomeUsdWithDebit=usd+totalDebitUsd; // debit included in income USD for sheet col L
+  const debitNames=debits.map(d=>d.name).join(', ');
+  const debitRemark=debits.length?debits.map(d=>d.name+': $'+fmtN(d.amount)).join(', '):'';
+  const manualRemark=document.getElementById('i-rem')?.value||'';
+  const fullRemark=debitRemark&&manualRemark?debitRemark+' | '+manualRemark:debitRemark||manualRemark;
+  const record={id:D.editRecord?.id||Date.now(),type:'income',date,staffArr:getStaff(),main,
+    incomeLbp:lbp,incomeUsd:incomeUsdWithDebit,incomeUsdRaw:usd,rate,
+    debit:totalDebitUsd,debitName:debitNames,debits,
+    method:document.getElementById('i-method')?.value||'Cash',
+    remark:fullRemark,totalLbp:tLbp,totalUsd:tUsd,ref,
+    by:D.users[D.cur].name,ts:new Date().toISOString(),row:D.editRecord?.row};
 
   try{
     let r;
@@ -802,8 +877,10 @@ async function saveExpense(mode){
 
 // ── FORM RESETS ───────────────────────────────────────────────────────────────
 function resetIncomeForm(){
-  ['i-lbp','i-usd','i-debit','i-rem','i-main'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('i-dname').value='';document.getElementById('i-method').value='Cash';
+  ['i-lbp','i-usd','i-rem','i-main'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('i-method').value='Cash';
+  document.getElementById('debit-rows').innerHTML='';
+  const dt=document.getElementById('debit-total');if(dt)dt.textContent='';
   document.querySelectorAll('#staff-chips .chip').forEach(c=>c.classList.remove('on'));
   removePhoto('income');clearAllErrors();calc();
   document.getElementById('i-upload-progress').textContent='';
