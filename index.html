@@ -225,9 +225,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div><div class="pg-title">Sweetheart Cafe</div><div class="pg-sub">Daily Operations</div></div>
     <div class="hdr-right"><div class="logout-btn" onclick="logout()">Logout</div><div id="main-sync-dot" class="sync-dot"></div></div>
   </div>
-  <div class="stat-row">
-    <div class="stat"><div class="stat-lbl">Today's income</div><div class="stat-val" id="s-inc">$0.00</div></div>
-    <div class="stat"><div class="stat-lbl">Today's expenses</div><div class="stat-val" id="s-exp">$0.00</div></div>
+  <!-- stats hidden but IDs kept so renderStats() doesn't error -->
+  <div style="display:none;">
+    <span id="s-inc"></span><span id="s-exp"></span>
   </div>
   <div class="sec-tabs" id="sec-tabs">
     <div class="stab on" id="t-income" onclick="secTab('income')">Income</div>
@@ -780,85 +780,105 @@ function choosePhotoSource(source){
 }
 function handlePhoto(evt,type){
   const file=evt.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const img=new Image();
-    img.onload=function(){
-      // Resize and compress to max 200KB
-      compressImage(img, file.type||'image/jpeg', 200*1024, function(base64,mimeType,dataUrl){
-        D.photoData[type]={base64,mimeType,file};
-        const preview=document.getElementById(type==='income'?'i-photo-preview':'e-photo-preview');
-        const wrap=document.getElementById(type==='income'?'i-photo-preview-wrap':'e-photo-preview-wrap');
-        const nameEl=document.getElementById(type==='income'?'i-photo-name':'e-photo-name');
-        const section=document.getElementById(type==='income'?'i-photo-section':'e-photo-section');
-        const kb=Math.round(base64.length*3/4/1024);
-        preview.src=dataUrl;
-        nameEl.textContent=file.name+' ('+kb+'KB)';
-        wrap.style.display='block';
-        section.classList.add('has-photo');
-      });
-    };
-    img.src=e.target.result;
+  const progressEl=document.getElementById(type==='income'?'i-upload-progress':'e-upload-progress');
+  if(progressEl){progressEl.textContent='Compressing image...';progressEl.className='upload-progress';}
+
+  // Use createObjectURL for faster loading, then compress via canvas
+  const objectUrl=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=function(){
+    URL.revokeObjectURL(objectUrl);
+    compressImage(img, 200*1024, function(base64, dataUrl){
+      D.photoData[type]={base64, mimeType:'image/jpeg', file};
+      const preview=document.getElementById(type==='income'?'i-photo-preview':'e-photo-preview');
+      const wrap=document.getElementById(type==='income'?'i-photo-preview-wrap':'e-photo-preview-wrap');
+      const nameEl=document.getElementById(type==='income'?'i-photo-name':'e-photo-name');
+      const section=document.getElementById(type==='income'?'i-photo-section':'e-photo-section');
+      const kb=Math.round(base64.length*0.75/1024);
+      preview.src=dataUrl;
+      nameEl.textContent=file.name+' → '+kb+'KB';
+      wrap.style.display='block';
+      section.classList.add('has-photo');
+      if(progressEl){progressEl.textContent='';progressEl.className='upload-progress';}
+    });
   };
-  reader.readAsDataURL(file);
+  img.onerror=function(){
+    // Fallback: if image fails to load via objectUrl, read as data URL
+    URL.revokeObjectURL(objectUrl);
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const img2=new Image();
+      img2.onload=function(){
+        compressImage(img2, 200*1024, function(base64,dataUrl){
+          D.photoData[type]={base64,mimeType:'image/jpeg',file};
+          const preview=document.getElementById(type==='income'?'i-photo-preview':'e-photo-preview');
+          const wrap=document.getElementById(type==='income'?'i-photo-preview-wrap':'e-photo-preview-wrap');
+          const nameEl=document.getElementById(type==='income'?'i-photo-name':'e-photo-name');
+          const section=document.getElementById(type==='income'?'i-photo-section':'e-photo-section');
+          const kb=Math.round(base64.length*0.75/1024);
+          preview.src=dataUrl;nameEl.textContent=file.name+' → '+kb+'KB';
+          wrap.style.display='block';section.classList.add('has-photo');
+          if(progressEl){progressEl.textContent='';progressEl.className='upload-progress';}
+        });
+      };
+      img2.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  img.src=objectUrl;
   evt.target.value='';
 }
 
-function compressImage(img, mimeType, maxBytes, callback){
+function compressImage(img, maxBytes, callback){
   const canvas=document.createElement('canvas');
-  const outMime='image/jpeg'; // always jpeg for best compression
-  let w=img.naturalWidth||img.width;
-  let h=img.naturalHeight||img.height;
+  const ctx=canvas.getContext('2d');
 
-  // Step 1: scale down dimensions aggressively first
-  // Target ~1200px max — good enough for a bill photo
-  let scale=1;
-  const MAX_DIM=1200;
-  if(w>MAX_DIM||h>MAX_DIM){
-    scale=Math.min(MAX_DIM/w, MAX_DIM/h);
-    w=Math.round(w*scale);
-    h=Math.round(h*scale);
+  // Step 1: scale to max 1200px on longest side
+  let w=img.naturalWidth||img.width||800;
+  let h=img.naturalHeight||img.height||600;
+  const MAX=1200;
+  if(w>MAX||h>MAX){
+    if(w>=h){h=Math.round(h*MAX/w);w=MAX;}
+    else{w=Math.round(w*MAX/h);h=MAX;}
   }
 
-  function draw(){
-    canvas.width=w;
-    canvas.height=h;
-    const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#ffffff';
-    ctx.fillRect(0,0,w,h);
-    ctx.drawImage(img,0,0,w,h);
+  function redraw(fw,fh){
+    canvas.width=fw; canvas.height=fh;
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,fw,fh);
+    ctx.drawImage(img,0,0,fw,fh);
   }
 
-  draw();
+  redraw(w,h);
 
-  // Step 2: reduce quality until under maxBytes
-  let quality=0.85;
+  // Step 2: iteratively reduce quality then size
+  let q=0.82;
   let attempts=0;
+  const MAX_ATTEMPTS=20;
 
-  function tryNext(){
-    attempts++;
-    const dataUrl=canvas.toDataURL(outMime, quality);
+  (function loop(){
+    const dataUrl=canvas.toDataURL('image/jpeg',q);
     const base64=dataUrl.split(',')[1];
-    const bytes=base64.length*0.75; // approx decoded size
+    const bytes=Math.ceil(base64.length*0.75);
 
-    if(bytes<=maxBytes || attempts>15){
-      callback(base64, outMime, dataUrl);
+    if(bytes<=maxBytes||attempts>=MAX_ATTEMPTS){
+      callback(base64,dataUrl);
       return;
     }
 
-    // Reduce: alternate between quality and size reduction
-    if(attempts%3===0 && (w>400||h>400)){
-      // Every 3rd attempt also shrink dimensions by 20%
-      w=Math.round(w*0.8);
-      h=Math.round(h*0.8);
-      draw();
+    attempts++;
+    if(attempts%4===0){
+      // Every 4th attempt shrink dimensions by 25%
+      w=Math.max(200,Math.round(w*0.75));
+      h=Math.max(200,Math.round(h*0.75));
+      redraw(w,h);
     }
-    quality=Math.max(0.1, quality-0.08);
-    tryNext();
-  }
-
-  tryNext();
+    q=Math.max(0.05, q-0.07);
+    loop();
+  })();
 }
+
+
 function removePhoto(type){
   D.photoData[type]=null;
   const wrap=document.getElementById(type==='income'?'i-photo-preview-wrap':'e-photo-preview-wrap');
