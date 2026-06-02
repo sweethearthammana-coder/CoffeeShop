@@ -782,21 +782,65 @@ function handlePhoto(evt,type){
   const file=evt.target.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=function(e){
-    const base64=e.target.result.split(',')[1];
-    const mimeType=file.type||'image/jpeg';
-    D.photoData[type]={base64,mimeType,file};
-    // Show preview
-    const preview=document.getElementById(type==='income'?'i-photo-preview':'e-photo-preview');
-    const wrap=document.getElementById(type==='income'?'i-photo-preview-wrap':'e-photo-preview-wrap');
-    const nameEl=document.getElementById(type==='income'?'i-photo-name':'e-photo-name');
-    const section=document.getElementById(type==='income'?'i-photo-section':'e-photo-section');
-    preview.src=e.target.result;
-    nameEl.textContent=file.name;
-    wrap.style.display='block';
-    section.classList.add('has-photo');
+    const img=new Image();
+    img.onload=function(){
+      // Resize and compress to max 200KB
+      compressImage(img, file.type||'image/jpeg', 200*1024, function(base64,mimeType,dataUrl){
+        D.photoData[type]={base64,mimeType,file};
+        const preview=document.getElementById(type==='income'?'i-photo-preview':'e-photo-preview');
+        const wrap=document.getElementById(type==='income'?'i-photo-preview-wrap':'e-photo-preview-wrap');
+        const nameEl=document.getElementById(type==='income'?'i-photo-name':'e-photo-name');
+        const section=document.getElementById(type==='income'?'i-photo-section':'e-photo-section');
+        const kb=Math.round(base64.length*3/4/1024);
+        preview.src=dataUrl;
+        nameEl.textContent=file.name+' ('+kb+'KB)';
+        wrap.style.display='block';
+        section.classList.add('has-photo');
+      });
+    };
+    img.src=e.target.result;
   };
   reader.readAsDataURL(file);
   evt.target.value='';
+}
+
+function compressImage(img, mimeType, maxBytes, callback){
+  // Start at full size, reduce quality and dimensions until under maxBytes
+  const canvas=document.createElement('canvas');
+  let w=img.width, h=img.height;
+  // Max dimension 1600px to reduce size before quality compression
+  const MAX_DIM=1600;
+  if(w>MAX_DIM||h>MAX_DIM){
+    if(w>h){h=Math.round(h*MAX_DIM/w);w=MAX_DIM;}
+    else{w=Math.round(w*MAX_DIM/h);h=MAX_DIM;}
+  }
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(img,0,0,w,h);
+
+  // Try quality from 0.9 down to 0.3 until under maxBytes
+  let quality=0.9;
+  let dataUrl, base64;
+  const tryCompress=()=>{
+    // Force jpeg for compression (png can't be quality-compressed)
+    const outMime='image/jpeg';
+    dataUrl=canvas.toDataURL(outMime, quality);
+    base64=dataUrl.split(',')[1];
+    const bytes=Math.round(base64.length*3/4);
+    if(bytes<=maxBytes||quality<=0.3){
+      callback(base64, outMime, dataUrl);
+    } else {
+      quality=Math.round((quality-0.1)*10)/10;
+      // If still too big at quality 0.5, also shrink dimensions
+      if(quality<0.5&&(w>800||h>800)){
+        w=Math.round(w*0.75); h=Math.round(h*0.75);
+        canvas.width=w; canvas.height=h;
+        ctx.drawImage(img,0,0,w,h);
+      }
+      tryCompress();
+    }
+  };
+  tryCompress();
 }
 function removePhoto(type){
   D.photoData[type]=null;
