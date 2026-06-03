@@ -53,8 +53,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .stat-lbl{font-size:13px;color:#666;margin-bottom:6px;}
 .stat-val{font-size:24px;font-weight:600;}
 .sec-tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e5e5e5;margin:0 20px;}
-.stab{padding:12px 0;text-align:center;font-size:15px;font-weight:500;cursor:pointer;color:#999;border-bottom:2.5px solid transparent;}
-.stab.on{color:#1a1a1a;border-bottom-color:#1a1a1a;}
+.stab{padding:12px 0;text-align:center;font-size:15px;font-weight:500;cursor:pointer;color:#999;border-bottom:3px solid transparent;transition:all .15s;}
+.stab.on{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:700;}
 .fa{padding:20px;padding-bottom:100px;}
 .sub-tabs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}
 .sub-tab{padding:8px 16px;font-size:13px;border:1px solid #e0e0e0;border-radius:20px;cursor:pointer;color:#666;background:#fff;}
@@ -121,8 +121,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .hf.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
 .empty-msg,.loading-msg{padding:40px 0;text-align:center;color:#999;font-size:15px;}
 .nav-bot{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;background:#fff;border-top:1px solid #e5e5e5;padding:6px 0 max(6px,env(safe-area-inset-bottom));z-index:100;}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 0;font-size:11px;color:#999;font-weight:500;}
-.nb.on{color:#1a1a1a;}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 0 4px;font-size:11px;color:#999;font-weight:500;border-top:3px solid transparent;transition:all .15s;}
+.nb.on{color:#1a1a1a;border-top-color:#1a1a1a;font-weight:700;}
 .nb-ic{font-size:22px;line-height:1;}
 .sec-title{font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;}
 .staff-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;}
@@ -162,6 +162,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .install-banner.show{display:block;}
 .ib-title{font-size:15px;font-weight:700;color:#27500a;margin-bottom:6px;}
 .ib-steps{font-size:13px;color:#3b6d11;line-height:1.8;}
+/* monthly tracker */
+.tracker-wrap{padding:16px 20px 80px;}
+.tracker-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.tracker-sel{border:1px solid #e0e0e0;border-radius:10px;padding:7px 12px;font-size:14px;background:#fff;color:#1a1a1a;outline:none;appearance:none;cursor:pointer;}
+.tracker-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.tc{border-radius:16px;padding:16px;}
+.tc.inc{background:#eaf3de;border:1px solid #c0dd97;}
+.tc.exp{background:#fcebeb;border:1px solid #f5aaaa;}
+.tc-lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.tc.inc .tc-lbl{color:#3b6d11;}.tc.exp .tc-lbl{color:#791f1f;}
+.tc-val{font-size:22px;font-weight:700;}
+.tc.inc .tc-val{color:#27500a;}.tc.exp .tc-val{color:#a32d2d;}
+.tc-sub{font-size:12px;margin-top:3px;}
+.tc.inc .tc-sub{color:#3b6d11;}.tc.exp .tc-sub{color:#791f1f;}
+.tracker-net{background:#f5f5f5;border-radius:16px;padding:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
+.tn-lbl{font-size:14px;color:#666;font-weight:500;}
+.tn-val{font-size:22px;font-weight:700;}
 /* payment breakdown */
 .pay-cash-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;margin-bottom:8px;}
 .pay-label{font-size:15px;font-weight:600;color:#1a1a1a;min-width:50px;}
@@ -349,6 +366,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="hf" id="hf-expense" onclick="setHF('expense')">Expenses</div>
     </div>
     <div id="hist-list"></div>
+  </div>
+
+  <!-- MONTHLY TRACKER — manager only -->
+  <div id="panel-tracker" class="scr" style="display:none;">
+    <div class="tracker-wrap">
+      <div class="tracker-header">
+        <span style="font-size:17px;font-weight:600;">Monthly Tracker</span>
+        <select class="tracker-sel" id="tr-month" onchange="renderTracker()">
+          <option value="all">All months</option>
+        </select>
+        <select class="tracker-sel" id="tr-year" onchange="renderTracker()"></select>
+      </div>
+      <div class="tracker-cards">
+        <div class="tc inc"><div class="tc-lbl">Income</div><div class="tc-val" id="tr-inc">$0.00</div><div class="tc-sub" id="tr-inc-lbp">0 LBP</div></div>
+        <div class="tc exp"><div class="tc-lbl">Expenses</div><div class="tc-val" id="tr-exp">$0.00</div><div class="tc-sub" id="tr-exp-sub">0 entries</div></div>
+      </div>
+      <div class="tracker-net">
+        <span class="tn-lbl">Net (Income − Expenses)</span>
+        <span class="tn-val" id="tr-net">$0.00</span>
+      </div>
+    </div>
   </div>
 
   <!-- MANAGER — only rendered for manager role -->
@@ -1134,10 +1172,72 @@ function resetExpenseForm(){
 }
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
+// ── MONTHLY TRACKER ──────────────────────────────────────────────────────────
+const MONTHS_FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function initTracker(){
+  // Populate year selector from records
+  const years=[...new Set(D.records.map(r=>{
+    const d=new Date(extractDateStr(String(r.date))+'T12:00:00');
+    return isNaN(d)?null:d.getFullYear();
+  }).filter(Boolean))].sort((a,b)=>b-a);
+  const curYear=new Date().getFullYear();
+  if(!years.includes(curYear))years.unshift(curYear);
+  const ySel=document.getElementById('tr-year');
+  if(ySel){ySel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');}
+  // Set month to current
+  const mSel=document.getElementById('tr-month');
+  if(mSel){
+    mSel.innerHTML='<option value="all">All months</option>'+
+      MONTHS.map((m,i)=>`<option value="${i+1}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('');
+  }
+  renderTracker();
+}
+function renderTracker(){
+  const mSel=document.getElementById('tr-month');
+  const ySel=document.getElementById('tr-year');
+  const selMonth=mSel?mSel.value:'all';
+  const selYear=ySel?parseInt(ySel.value):new Date().getFullYear();
+
+  // Load fresh records then calculate
+  api('getRecords',{type:'all'}).then(res=>{
+    if(res.records){D.records=res.records;saveLocal();}
+    calcTracker(selMonth,selYear);
+  }).catch(()=>calcTracker(selMonth,selYear));
+}
+function calcTracker(selMonth,selYear){
+  let recs=D.records.filter(r=>{
+    const ds=extractDateStr(String(r.date));
+    const d=new Date(ds+'T12:00:00');
+    if(isNaN(d))return false;
+    if(selMonth!=='all'&&d.getMonth()+1!==parseInt(selMonth))return false;
+    if(d.getFullYear()!==selYear)return false;
+    return true;
+  });
+
+  const incRecs=recs.filter(r=>r.type==='income');
+  const expRecs=recs.filter(r=>r.type==='expense');
+
+  const totalIncUsd=incRecs.reduce((s,r)=>s+(parseFloat(r.totalUsd)||0),0);
+  const totalIncLbp=incRecs.reduce((s,r)=>s+(parseFloat(r.totalLbp)||0),0);
+  const totalExpUsd=expRecs.reduce((s,r)=>s+(parseFloat(r.amtUsd)||0),0);
+  const net=totalIncUsd-totalExpUsd;
+
+  document.getElementById('tr-inc').textContent='$'+totalIncUsd.toFixed(2);
+  document.getElementById('tr-inc-lbp').textContent=fmtN(Math.round(totalIncLbp))+' LBP';
+  document.getElementById('tr-exp').textContent='$'+totalExpUsd.toFixed(2);
+  document.getElementById('tr-exp-sub').textContent=expRecs.length+' entries';
+  const netEl=document.getElementById('tr-net');
+  if(netEl){
+    netEl.textContent=(net>=0?'$':'-$')+Math.abs(net).toFixed(2);
+    netEl.style.color=net>=0?'#27500a':'#a32d2d';
+  }
+}
+
 function renderNav(){
   const items=[];
   if(hasPerm('income')||hasPerm('expense'))items.push({k:'ops',ic:'⊞',lbl:'Operations'});
   if(hasPerm('history'))items.push({k:'history',ic:'☰',lbl:'History'});
+  if(hasPerm('manager'))items.push({k:'tracker',ic:'📊',lbl:'Tracker'});
   if(hasPerm('manager'))items.push({k:'manager',ic:'⚙',lbl:'Manager'});
   document.getElementById('nav-bot').innerHTML=items.map(it=>`<div class="nb" id="nb-${it.k}" onclick="navTo('${it.k}')"><span class="nb-ic">${it.ic}</span>${it.lbl}</div>`).join('');
   if(items.length)setNav(items[0].k);
@@ -1145,10 +1245,15 @@ function renderNav(){
 function setNav(k){document.querySelectorAll('.nb').forEach(n=>n.classList.toggle('on',n.id==='nb-'+k));}
 function navTo(k){
   setNav(k);
-  ['panel-income','panel-expenses','panel-hist','panel-mgr'].forEach(id=>document.getElementById(id).style.display='none');
+  ['panel-income','panel-expenses','panel-hist','panel-mgr','panel-tracker'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('sec-tabs').style.display='none';
   if(k==='ops'){document.getElementById('sec-tabs').style.display='';secTab(D.sTab);}
   else if(k==='history'){document.getElementById('panel-hist').style.display='block';loadAndRenderHist();}
+  else if(k==='tracker'){
+    if(!hasPerm('manager')){toast('Access denied');return;}
+    document.getElementById('panel-tracker').style.display='block';
+    initTracker();
+  }
   else if(k==='manager'){
     if(!hasPerm('manager')){toast('Access denied');return;}
     document.getElementById('panel-mgr').style.display='block';renderMgrTabs();
@@ -1186,7 +1291,8 @@ function hiHtml(r){
   const editBtn=canEdit?`<button class="abtn" style="font-size:11px;padding:3px 8px;" onclick="event.stopPropagation();editRec('${r.id}')">Edit</button>`:'';
   const delBtn=canDel?`<button class="del-btn" onclick="event.stopPropagation();delRec('${r.id}',${r.row},'${r.type}')">Delete</button>`:'';
   const refBdg=r.ref?`<span class="bdg bdg-ref">${r.ref}</span>`:'';
-  return`<div class="hi" id="rec-${r.id}"><div class="hi-top"><span class="hi-desc">${desc}</span><span class="hi-amt" style="color:${isI?'#27500a':'#a32d2d'}">${isI?'+':'-'}${amt}</span></div><div class="hi-meta"><span>${r.date}</span><span class="bdg ${isI?'bdg-i':'bdg-e'}">${isI?'Income':'Expense'}</span>${refBdg}${editBtn}${delBtn}</div></div>`;
+  const byLabel=r.by?`<span style="font-size:11px;color:#aaa;">by ${r.by}</span>`:'';
+  return`<div class="hi" id="rec-${r.id}"><div class="hi-top"><span class="hi-desc">${desc}</span><span class="hi-amt" style="color:${isI?'#27500a':'#a32d2d'}">${isI?'+':'-'}${amt}</span></div><div class="hi-meta"><span>${r.date}</span>${byLabel}<span class="bdg ${isI?'bdg-i':'bdg-e'}">${isI?'Income':'Expense'}</span>${refBdg}${editBtn}${delBtn}</div></div>`;
 }
 
 function editRec(id){
