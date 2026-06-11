@@ -1689,14 +1689,35 @@ function buildCalModal(ev){
         ${staffList.map(s=>`<div class="scc ${s===selStaff?'on':''}" style="background:${getStaffColor(s)}" onclick="calSelStaff(this,'${s}')">${s}</div>`).join('')}
       </div>
     </div>
-    <div class="modal-btns" style="margin-top:8px;">
-      ${isEdit?`<button onclick="calDeleteEv()" class="danger" style="flex:1;padding:14px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;border:none;background:#791f1f;color:#fff;">Delete</button>`:'<button onclick="closeModal('modal-cal')">Cancel</button>'}
-      <button class="primary" style="flex:1;padding:14px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;border:none;background:#1a1a1a;color:#fff;" onclick="calSave()">${isEdit?'Update':'Add'}</button>
-    </div>
+    <div class="modal-btns" style="margin-top:8px;" id="cal-modal-btns"></div>
   `;
   // Store selected color
   window._calColor=selColor;
   window._calStaff=selStaff;
+  // Set action buttons separately to avoid nested template literal issues
+  const btnsEl=document.getElementById('cal-modal-btns');
+  if(btnsEl){
+    if(isEdit){
+      btnsEl.innerHTML='';
+      const delBtn=document.createElement('button');
+      delBtn.textContent='Delete';
+      delBtn.style.cssText='flex:1;padding:14px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;border:none;background:#791f1f;color:#fff;';
+      delBtn.onclick=calDeleteEv;
+      btnsEl.appendChild(delBtn);
+    } else {
+      btnsEl.innerHTML='';
+      const cancelBtn=document.createElement('button');
+      cancelBtn.textContent='Cancel';
+      cancelBtn.style.cssText='flex:1;padding:14px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid #e0e0e0;background:#fff;color:#1a1a1a;';
+      cancelBtn.onclick=()=>closeModal('modal-cal');
+      btnsEl.appendChild(cancelBtn);
+    }
+    const saveBtn=document.createElement('button');
+    saveBtn.textContent=isEdit?'Update':'Add';
+    saveBtn.style.cssText='flex:1;padding:14px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;border:none;background:#1a1a1a;color:#fff;';
+    saveBtn.onclick=calSave;
+    btnsEl.appendChild(saveBtn);
+  }
 }
 
 function calSwitchType(t){
